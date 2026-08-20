@@ -1,5 +1,8 @@
+name: rechnungshof
+
 services:
     api:
+        container_name: rechnungshof_backend
         build:
             context: .
             dockerfile: docker/Dockerfile-api
@@ -14,6 +17,7 @@ services:
                 condition: service_healthy
 
     frontend-dev:
+        container_name: rechnungshof_frontend
         build:
             context: .
             dockerfile: docker/Dockerfile-devel
@@ -23,6 +27,7 @@ services:
                 condition: service_healthy
 
     nginx:
+        container_name: rechnungshof_nginx
         image: docker.io/nginx:stable-alpine
         depends_on:
             api:
@@ -33,6 +38,7 @@ services:
             - "8080:80"
 
     mailer:
+        container_name: rechnungshof_mailer
         build:
             context: .
             dockerfile: docker/Dockerfile-api
@@ -50,6 +56,7 @@ services:
                 condition: service_healthy
 
     cron:
+        container_name: rechnungshof_cron
         build:
             context: .
             dockerfile: docker/Dockerfile-api
@@ -64,6 +71,7 @@ services:
             ABRECHNUNG_EMAIL__MODE: smtp
 
     postgres:
+        container_name: rechnungshof_postgres
         image: docker.io/postgres:14-alpine
         env_file: .env
         healthcheck:
@@ -73,6 +81,7 @@ services:
             - "./data/pg:/var/lib/postgresql/data"
 
     mailhog:
+        container_name: rechnungshof_mailhog
         image: docker.io/mailhog/mailhog
         ports:
             - "8025:8025"

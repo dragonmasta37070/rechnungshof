@@ -1,12 +1,18 @@
-# Abrechnung
+# Rechnungshof
 
-[![GitHub Actions Status](https://github.com/SFTtech/abrechnung/actions/workflows/push_on_master.yaml/badge.svg)](https://github.com/SFTtech/abrechnung/actions/workflows/push_on_master.yaml)
-[![Translation Status](https://hosted.weblate.org/widget/abrechnung/svg-badge.svg)](https://hosted.weblate.org/engage/abrechnung/)
+> **Fork notice.** Rechnungshof is a self-hosted fork of
+> [SFTtech/abrechnung](https://github.com/SFTtech/abrechnung) (German _Abrechnung_ = _settlement_;
+> _Rechnungshof_ = _Court of Audit_). All credit for the original work goes to the Abrechnung
+> authors — see [authors.md](authors.md). Released under the same **AGPL-3.0-or-later** license.
+>
+> **What differs from upstream:** authentication is handled exclusively by an external
+> OIDC provider ([Authentik](https://goauthentik.io/)). Abrechnung's built-in email/password
+> login, registration and password-reset flows are removed. See [NOTES.md](NOTES.md) for
+> operating instructions.
 
-The _Abrechnung_ (German for _reckoning_, _settlement_, _revenge_) aims to be a versatile and user-centric **payment**, **transaction** and **bookkeeping** management tool for human groups and events.
-It aims to be a feature-complete, free and open source alternative to Splitwise, Tricount or similar.
-
-> You can simply **try** our [**demo instance**](https://demo.abrechnung.sft.lol)!
+_Abrechnung_ is a versatile and user-centric **payment**, **transaction** and **bookkeeping**
+management tool for human groups and events — a feature-complete, free and open source
+alternative to Splitwise, Tricount or similar.
 
 ### Features
 
@@ -64,7 +70,8 @@ For questions, suggestions, problem support, please join and just ask!
 
 | Contact       | Where?                                                                                          |
 | ------------- | ----------------------------------------------------------------------------------------------- |
-| Issue Tracker | [SFTtech/abrechnung](https://github.com/SFTtech/abrechnung/issues)                              |
+| Upstream Issues | [SFTtech/abrechnung](https://github.com/SFTtech/abrechnung/issues)                            |
+| Fork Issues   | [dragonmasta37070/rechnungshof](https://github.com/dragonmasta37070/rechnungshof/issues)        |
 | Matrix Chat   | [`#sfttech:matrix.org`](https://app.element.io/#/room/#sfttech:matrix.org)                      |
 | Support us    | [![money sink](https://liberapay.com/assets/widgets/donate.svg)](https://liberapay.com/SFTtech) |
 

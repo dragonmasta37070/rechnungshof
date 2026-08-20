@@ -1,23 +1,29 @@
+name: rechnungshof
+
 services:
     api:
+        container_name: rechnungshof_backend
         extends:
             file: docker-compose.base.yaml
             service: api
         image: quay.io/abrechnung/api:latest-release
 
     frontend:
+        container_name: rechnungshof_frontend
         image: quay.io/abrechnung/frontend:latest-release
         depends_on:
             api:
                 condition: service_healthy
 
     mailer:
+        container_name: rechnungshof_mailer
         extends:
             file: docker-compose.base.yaml
             service: mailer
         image: quay.io/abrechnung/api:latest-release
 
     cron:
+        container_name: rechnungshof_cron
         extends:
             file: docker-compose.base.yaml
             service: cron
