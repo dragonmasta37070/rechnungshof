@@ -3,7 +3,7 @@ upstream abrechnung_api {
 }
 
 upstream abrechnung_node {
-    server node:4200;
+    server frontend-dev:4200;
 }
 
 server {

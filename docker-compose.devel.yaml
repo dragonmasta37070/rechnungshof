@@ -10,6 +10,8 @@ services:
             file: docker-compose.base.yaml
             service: api
         env_file: .env
+        ports:
+            - "8080:8080"   # API direkt; nginx haengt am ungebauten Frontend
         environment:
             ABRECHNUNG_DATABASE__HOST: postgres
         depends_on:
@@ -48,7 +50,7 @@ services:
         env_file: .env
         environment:
             ABRECHNUNG_DATABASE__HOST: postgres
-            ABRECHNUNG_EMAIL__HOST: mail
+            ABRECHNUNG_EMAIL__HOST: mailhog
             ABRECHNUNG_EMAIL__PORT: 1025
             ABRECHNUNG_EMAIL__MODE: smtp
         depends_on:
@@ -66,7 +68,7 @@ services:
         env_file: .env
         environment:
             ABRECHNUNG_DATABASE__HOST: postgres
-            ABRECHNUNG_EMAIL__HOST: mail
+            ABRECHNUNG_EMAIL__HOST: mailhog
             ABRECHNUNG_EMAIL__PORT: 1025
             ABRECHNUNG_EMAIL__MODE: smtp
 
@@ -84,5 +86,5 @@ services:
         container_name: rechnungshof_mailhog
         image: docker.io/mailhog/mailhog
         ports:
-            - "8025:8025"
+            - "8026:8025"   # 8025 ist lokal von mailpit belegt
         env_file: .env
