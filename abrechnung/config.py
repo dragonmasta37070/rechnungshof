@@ -1,10 +1,10 @@
 import enum
 from datetime import timedelta
 from pathlib import Path
-from typing import List, Literal, Optional, Tuple, Type
+from typing import List, Tuple, Type
 
 import yaml
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
@@ -48,23 +48,26 @@ class ApiConfig(HTTPServerConfig):
     enable_cors: bool = True
 
 
-class RegistrationConfig(BaseModel):
-    enabled: bool = False
-    allow_guest_users: bool = False
-    valid_email_domains: Optional[List[str]] = None
-    require_email_confirmation: bool = True
+class OIDCConfig(BaseModel):
+    """Authentik (or any OIDC provider) is the sole identity provider.
 
+    The backend is a pure resource server: it never performs an OAuth handshake
+    and never sees a credential. It only validates access tokens that the client
+    obtained itself via the authorization code flow with PKCE.
+    """
 
-class EmailConfig(BaseModel):
-    class AuthConfig(BaseModel):
-        username: str
-        password: str
+    issuer: str
+    audience: str
+    jwks_url: str
 
-    address: EmailStr
-    host: str
-    port: int
-    mode: Literal["local", "smtp-ssl", "smtp", "smtp-starttls"] = "smtp"
-    auth: Optional[AuthConfig] = None
+    # Only asymmetric algorithms. Allowing an HMAC algorithm here would let an
+    # attacker sign a token with the public JWKS key and have it accepted.
+    algorithms: List[str] = ["RS256", "RS384", "RS512", "ES256", "ES384", "ES512"]
+
+    # How long a fetched JWKS is reused before it is refetched. An unknown key id
+    # forces an immediate refetch regardless, so provider key rotation is picked
+    # up without waiting for this to expire.
+    jwks_cache_seconds: int = 3600
 
 
 class MetricsConfig(BaseModel):
@@ -78,10 +81,9 @@ class Config(BaseSettings):
     service: ServiceConfig
     api: ApiConfig
     database: DatabaseConfig
-    email: EmailConfig
+    oidc: OIDCConfig
     # in case all params are optional this is needed to make the whole section optional
     demo: DemoConfig = DemoConfig()
-    registration: RegistrationConfig = RegistrationConfig()
     metrics: MetricsConfig = MetricsConfig()
 
     @classmethod

@@ -6,6 +6,7 @@ from abrechnung.application.groups import GroupService
 from abrechnung.application.transactions import TransactionService
 from abrechnung.application.users import UserService
 from abrechnung.config import Config
+from abrechnung.core.oidc import OIDCValidator
 
 
 @dataclass
@@ -21,3 +22,4 @@ class Context:
     account_service: AccountService
     group_service: GroupService
     export_import_service: ExportImportService
+    oidc_validator: OIDCValidator

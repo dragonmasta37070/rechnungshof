@@ -9,6 +9,7 @@ from abrechnung.application.groups import GroupService
 from abrechnung.application.transactions import TransactionService
 from abrechnung.application.users import UserService
 from abrechnung.config import Config
+from abrechnung.core.oidc import OIDCValidator
 
 
 def get_config(request: Request) -> Config:
@@ -32,6 +33,10 @@ async def get_db_transaction(
     async with db_pool.acquire() as conn:
         async with conn.transaction():
             yield conn
+
+
+def get_oidc_validator(request: Request) -> OIDCValidator:
+    return request.state.context.oidc_validator
 
 
 def get_user_service(request: Request) -> UserService:

@@ -1,6 +1,6 @@
 service:
     url: "https://localhost"
-    name: "Abrechnung"
+    name: "Rechnungshof"
 
 database:
     host: "0.0.0.0"
@@ -13,10 +13,9 @@ api:
     port: 8080
     id: default
 
-registration:
-    enabled: false
-
-email:
-    host: "localhost"
-    port: 587
-    mode: "smtp-starttls"
+# Authentik is the sole identity provider. These three are overridden per
+# deployment via ABRECHNUNG_OIDC__ISSUER / __AUDIENCE / __JWKS_URL.
+oidc:
+    issuer: "https://authentik.example.org/application/o/rechnungshof/"
+    audience: "rechnungshof"
+    jwks_url: "https://authentik.example.org/application/o/rechnungshof/jwks/"

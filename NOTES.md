@@ -40,9 +40,8 @@ Needed for `ABRECHNUNG_DATABASE__PASSWORD` (must equal `POSTGRES_PASSWORD`) and
 | Port | Service | Notes |
 |------|---------|-------|
 | **9990** | `nginx` | proxies `/api` to the backend and everything else to the frontend. Not started, see "Known breakage". |
-| **9925** | `mailhog` | web inbox for outgoing mail in dev |
 | **9980** | `api` | published directly. Phase 2 is verified with curl, and the future Angular SPA talks to the API rather than through nginx. |
-| — | `postgres` | not published; reach it via `docker compose exec postgres psql -U abrechnung` |
+| **9932** | `postgres` | published so the test suite can reach it from the host |
 
 API docs once running: <http://localhost:9980/docs> — the OpenAPI document is at
 `/openapi.json`, while the routes themselves live under `/api/v1/...`. nginx is what adds
@@ -144,15 +143,92 @@ Verified end to end over the API on 2026-08-20, without the React frontend:
 **Test user `phase1tester` (user_id 1)** exists with a password hash. It is a throwaway from
 this smoke test; Phase 2 decides whether to delete it or link it to an `oidc_subject`.
 
-## Phase 2 (in progress): Authentik as sole login
+## Phase 2: Authentik is the only way in
 
-Planned; not yet implemented. Notes so far:
+Done. The backend is a pure resource server — it validates access tokens and does
+nothing else. It never redirects, never exchanges a code, never sees a credential.
 
-- `python-jose[cryptography]` and `httpx` are **already** dependencies — JWKS validation
-  needs no new packages.
-- Auth entrypoints to replace: `abrechnung/http/auth.py` (`get_current_user`,
-  `get_current_session_id`), `abrechnung/http/routers/auth.py`, `abrechnung/core/auth.py`.
-- Endpoints that have to disappear, confirmed against the live OpenAPI document:
-  `POST /api/v1/auth/{register,login,token,logout,recover_password,confirm_registration,
-  confirm_password_recovery,confirm_email_change,delete_session,rename_session}` and
-  `POST /api/v1/profile/change_password`.
+### What the operator has to configure
+
+In Authentik: create an **OAuth2/OpenID provider**, set the client type to **public**
+(a browser app cannot keep a secret, which is exactly why PKCE exists), add a redirect
+URI for the frontend, and make sure the **email** scope is granted — provisioning
+refuses a token without an email claim.
+
+Then set three variables:
+
+| Variable | Where it comes from |
+|----------|--------------------|
+| `ABRECHNUNG_OIDC__ISSUER` | Authentik provider → "OpenID Configuration Issuer". Must match the `iss` claim character for character, trailing slash included. |
+| `ABRECHNUNG_OIDC__AUDIENCE` | the provider's Client ID |
+| `ABRECHNUNG_OIDC__JWKS_URL` | `https://<authentik>/application/o/<slug>/jwks/` |
+
+The backend must be able to reach `JWKS_URL`. Either put both containers on one Docker
+network and use the internal name, or go out over the public Traefik domain. If it cannot
+be reached, requests fail with **503**, not 401 — see below.
+
+### What was removed rather than disabled
+
+A disabled endpoint still has code behind it. All of these are gone:
+
+`POST /api/v1/auth/{register,login,token,logout,recover_password,confirm_registration,`
+`confirm_password_recovery,confirm_email_change,delete_session,rename_session}`,
+`POST /api/v1/profile/{change_password,change_email}`.
+
+Of the whole auth surface only `GET /api/v1/profile` survives. The OpenAPI document went
+from 39 paths to 27.
+
+Gone with them: `abrechnung/mailer.py` and the entire SMTP path (its only jobs were
+registration confirmation, password recovery and email change), `abrechnung/admin.py` and
+the `admin` CLI (it created users by prompting for a password), the `mailer` CLI command,
+the `mailer` and `mailhog` containers, every `ABRECHNUNG_EMAIL__*` variable, the
+`registration` config section, and the `bcrypt` and `aiosmtpd` dependencies.
+
+`preview_group` used to accept a second token through the request body as
+`logged_in_user_token`. It now uses the Authorization header like everything else, so
+there is exactly one way to authenticate.
+
+### Decisions worth knowing about
+
+**401 and 503 mean different things.** An invalid, expired or tampered token is 401. An
+unreachable identity provider is **503**. Answering 401 when Authentik is down would tell
+clients to discard perfectly good tokens and would hide an outage behind what looks like a
+wave of bad credentials.
+
+**No account linking by email.** If a token arrives whose email already belongs to another
+account, provisioning refuses. Matching an incoming token to an existing account by email
+address is how OIDC integrations turn into account takeover: anyone able to obtain a token
+carrying a victim's email inherits their account. Linking a pre-existing account is an
+operator decision — set `oidc_subject` by hand.
+
+**Username collisions are worked around, not fatal.** Display names are cosmetic, so a
+clash appends a short suffix derived from the subject rather than locking the user out.
+
+**The Phase 1 test user was deleted**, not linked. It had a password hash and no real
+Authentik subject, and leaving a password-bearing account behind contradicts the whole
+point. The dev database is empty; the first Authentik login provisions user 1.
+
+**Only asymmetric signature algorithms are accepted.** Allowing an HMAC algorithm would let
+anyone sign a token using the public key we fetch from the JWKS and have it accepted. `alg:
+none` is likewise rejected, and there is a test for it.
+
+**JWKS is cached for an hour**, and an unknown key id forces an immediate refetch, so
+provider key rotation is picked up without waiting for the cache to expire.
+
+### Tests
+
+`tests/test_oidc_auth.py`, 29 tests, no network access: they generate an RSA key, mint their
+own tokens and serve the matching JWKS from memory, so the real validation path runs end to
+end. Covered: provisioning on first sight, reuse on second, email updates propagating,
+provisioned users having no password, and rejection of expired, tampered, wrongly-signed,
+wrong-audience, wrong-issuer, unsigned and malformed tokens. Plus: removed routes are absent
+from the router, and an unreachable provider raises unavailable rather than unauthorized.
+
+```bash
+docker compose -f docker-compose.devel.yaml up -d postgres
+TEST_DB_HOST=localhost TEST_DB_PORT=9932 TEST_DB_USER=abrechnung \
+TEST_DB_DATABASE=abrechnung_test TEST_DB_PASSWORD=<from .env> uv run pytest
+```
+
+The test database `abrechnung_test` has to exist once:
+`docker compose -f docker-compose.devel.yaml exec postgres psql -U abrechnung -d abrechnung -c "create database abrechnung_test owner abrechnung;"`

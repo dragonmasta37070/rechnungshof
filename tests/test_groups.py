@@ -30,7 +30,7 @@ async def test_basic_invites(
     assert not invite.join_as_editor
     assert not invite.single_use
 
-    user2, _ = await create_test_user()
+    user2 = await create_test_user()
 
     group_id = await group_service.join_group(user=user2, invite_token=invite.token)
     assert group_id == dummy_group.id
@@ -53,11 +53,11 @@ async def test_single_use_invite(
     invite: GroupInvite = await group_service.get_invite(user=dummy_user, group_id=dummy_group.id, invite_id=invite_id)
     assert invite.single_use
 
-    user2, _ = await create_test_user()
+    user2 = await create_test_user()
     group_id = await group_service.join_group(user=user2, invite_token=invite.token)
     assert group_id == dummy_group.id
 
-    user3, _ = await create_test_user()
+    user3 = await create_test_user()
     with pytest.raises(Exception):
         await group_service.join_group(user=user3, invite_token=invite.token)
 
@@ -79,7 +79,7 @@ async def test_invite_without_expiry_date(
     invite: GroupInvite = await group_service.get_invite(user=dummy_user, group_id=dummy_group.id, invite_id=invite_id)
     assert invite.valid_until is None
 
-    user2, _ = await create_test_user()
+    user2 = await create_test_user()
     group_id = await group_service.join_group(user=user2, invite_token=invite.token)
     assert group_id == dummy_group.id
 
@@ -101,7 +101,7 @@ async def test_invite_link_preview(
     invite: GroupInvite = await group_service.get_invite(user=dummy_user, group_id=dummy_group.id, invite_id=invite_id)
     assert invite.single_use
 
-    user2, _ = await create_test_user()
+    user2 = await create_test_user()
     preview: GroupPreview = await group_service.preview_group(user=user2, invite_token=invite.token)
     assert preview.id == dummy_group.id
 
@@ -149,7 +149,7 @@ async def test_delete_group_fails_multiple_members(
     create_test_user: CreateTestUser,
     db_pool: Pool,
 ):
-    user2, _ = await create_test_user()
+    user2 = await create_test_user()
     group_id = await group_service.create_group(
         user=dummy_user,
         name=secrets.token_hex(16),

@@ -15,13 +15,6 @@ services:
             api:
                 condition: service_healthy
 
-    mailer:
-        container_name: rechnungshof_mailer
-        extends:
-            file: docker-compose.base.yaml
-            service: mailer
-        image: quay.io/abrechnung/api:latest-release
-
     cron:
         container_name: rechnungshof_cron
         extends:

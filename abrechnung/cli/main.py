@@ -7,10 +7,8 @@ import typer
 
 from abrechnung.config import read_config
 from abrechnung.http.api import Api, print_openapi
-from abrechnung.mailer import Mailer
 from abrechnung.util import log_setup
 
-from .admin import admin_cli
 from .database import database_cli
 from .demo import demo_cli
 
@@ -47,12 +45,6 @@ def get_config(
 
 
 @cli.command()
-def mailer(ctx: typer.Context):
-    m = Mailer(config=ctx.obj.config)
-    asyncio.run(m.run())
-
-
-@cli.command()
 def api(ctx: typer.Context):
     a = Api(config=ctx.obj.config)
     asyncio.run(a.run())
@@ -65,7 +57,6 @@ def show_openapi(ctx: typer.Context):
 
 cli.add_typer(database_cli, name="db", help="Manage everything related to the abrechnung database")
 cli.add_typer(demo_cli, name="demo", help="Manage abrechnung demo instances")
-cli.add_typer(admin_cli, name="admin", help="General administrative utilities")
 
 
 def main():

@@ -11,6 +11,7 @@ from abrechnung.application.groups import GroupService
 from abrechnung.application.transactions import TransactionService
 from abrechnung.application.users import UserService
 from abrechnung.config import Config
+from abrechnung.core.oidc import OIDCValidator
 from abrechnung.database.migrations import check_revision_version, get_database
 
 from . import metrics
@@ -52,6 +53,7 @@ class Api:
         db = get_database(config=self.cfg.database)
         self.db_pool = await db.create_pool()
         await check_revision_version(db)
+        self.oidc_validator = OIDCValidator(config=self.cfg.oidc)
         self.user_service = UserService(db_pool=self.db_pool, config=self.cfg)
         self.transaction_service = TransactionService(db_pool=self.db_pool, config=self.cfg)
         self.account_service = AccountService(db_pool=self.db_pool, config=self.cfg)
@@ -70,6 +72,7 @@ class Api:
             account_service=self.account_service,
             group_service=self.group_service,
             export_import_service=self.export_import_service,
+            oidc_validator=self.oidc_validator,
         )
 
     async def _teardown(self):

@@ -1,14 +1,6 @@
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel
-
-
-class Session(BaseModel):
-    id: int
-    name: str
-    valid_until: Optional[datetime]
-    last_seen: datetime
 
 
 class User(BaseModel):
@@ -18,5 +10,6 @@ class User(BaseModel):
     registered_at: datetime
     deleted: bool
     pending: bool
-    sessions: list[Session]
     is_guest_user: bool
+    # Null only for accounts that predate the switch to OIDC and were never linked.
+    oidc_subject: str | None = None

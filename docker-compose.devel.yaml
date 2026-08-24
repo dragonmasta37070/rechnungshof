@@ -39,24 +39,6 @@ services:
         ports:
             - "9990:80"
 
-    mailer:
-        container_name: rechnungshof_mailer
-        build:
-            context: .
-            dockerfile: docker/Dockerfile-api
-        extends:
-            file: docker-compose.base.yaml
-            service: mailer
-        env_file: .env
-        environment:
-            ABRECHNUNG_DATABASE__HOST: postgres
-            ABRECHNUNG_EMAIL__HOST: mailhog
-            ABRECHNUNG_EMAIL__PORT: 1025
-            ABRECHNUNG_EMAIL__MODE: smtp
-        depends_on:
-            api:
-                condition: service_healthy
-
     cron:
         container_name: rechnungshof_cron
         build:
@@ -68,13 +50,12 @@ services:
         env_file: .env
         environment:
             ABRECHNUNG_DATABASE__HOST: postgres
-            ABRECHNUNG_EMAIL__HOST: mailhog
-            ABRECHNUNG_EMAIL__PORT: 1025
-            ABRECHNUNG_EMAIL__MODE: smtp
 
     postgres:
         container_name: rechnungshof_postgres
         image: docker.io/postgres:14-alpine
+        ports:
+            - "9932:5432"   # so the test suite can reach it from the host
         env_file: .env
         healthcheck:
             test: ["CMD", "/usr/local/bin/pg_isready"]
@@ -82,9 +63,3 @@ services:
         volumes:
             - "./data/pg:/var/lib/postgresql/data"
 
-    mailhog:
-        container_name: rechnungshof_mailhog
-        image: docker.io/mailhog/mailhog
-        ports:
-            - "9925:8025"
-        env_file: .env

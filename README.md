@@ -6,9 +6,14 @@
 > authors — see [authors.md](authors.md). Released under the same **AGPL-3.0-or-later** license.
 >
 > **What differs from upstream:** authentication is handled exclusively by an external
-> OIDC provider ([Authentik](https://goauthentik.io/)). Abrechnung's built-in email/password
-> login, registration and password-reset flows are removed. See [NOTES.md](NOTES.md) for
-> operating instructions.
+> OIDC provider ([Authentik](https://goauthentik.io/)). The backend is a pure resource
+> server: it validates access tokens against the provider's JWKS and never handles a
+> credential. Abrechnung's built-in login, registration, password-reset, email-change and
+> session endpoints are removed — not disabled — along with the entire SMTP path. Users are
+> provisioned automatically on first sight, keyed by the OIDC `sub` claim.
+>
+> Configure `ABRECHNUNG_OIDC__ISSUER`, `ABRECHNUNG_OIDC__AUDIENCE` and
+> `ABRECHNUNG_OIDC__JWKS_URL`; see [NOTES.md](NOTES.md) for the full operator guide.
 
 _Abrechnung_ is a versatile and user-centric **payment**, **transaction** and **bookkeeping**
 management tool for human groups and events — a feature-complete, free and open source

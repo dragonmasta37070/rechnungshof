@@ -16,8 +16,7 @@ from abrechnung.application.users import UserService
 from abrechnung.config import (
     ApiConfig,
     Config,
-    EmailConfig,
-    RegistrationConfig,
+    OIDCConfig,
     ServiceConfig,
 )
 from abrechnung.database.migrations import get_database, reset_schema
@@ -46,11 +45,15 @@ def get_test_db_config() -> DatabaseConfig:
     )
 
 
+TEST_ISSUER = "https://authentik.test.invalid/application/o/rechnungshof/"
+TEST_AUDIENCE = "rechnungshof-test"
+TEST_JWKS_URL = "https://authentik.test.invalid/application/o/rechnungshof/jwks/"
+
 TEST_CONFIG = Config(
-    email=EmailConfig(
-        host="localhost",
-        port=555555,
-        address="abrechnung@stusta.de",
+    oidc=OIDCConfig(
+        issuer=TEST_ISSUER,
+        audience=TEST_AUDIENCE,
+        jwks_url=TEST_JWKS_URL,
     ),
     api=ApiConfig(
         secret_key="asdf",
@@ -58,7 +61,6 @@ TEST_CONFIG = Config(
         port=8000,
         base_url="https://abrechnung.example.lol",
     ),
-    registration=RegistrationConfig(enabled=True),
     database=get_test_db_config(),
     service=ServiceConfig(
         name="Test Abrechnung",
@@ -114,32 +116,30 @@ async def export_import_service(
 
 
 class CreateTestUser(Protocol):
-    def __call__(self) -> Awaitable[tuple[User, str]]: ...
+    def __call__(self) -> Awaitable[User]: ...
 
 
 @pytest.fixture
 async def create_test_user(db_pool: Pool, user_service: UserService) -> CreateTestUser:
-    async def _create() -> tuple[User, str]:
+    """A user as OIDC provisioning would leave it: an oidc_subject, no password."""
+
+    async def _create() -> User:
         async with db_pool.acquire() as conn:
-            password = "asdf1234"
-            hashed_password = user_service._hash_password(password)  # pylint: disable=protected-access
             user_id = await conn.fetchval(
-                "insert into usr (username, email, hashed_password, pending) values ($1, $2, $3, false) returning id",
+                "insert into usr (username, email, oidc_subject, hashed_password, pending) "
+                "values ($1, $2, $3, null, false) returning id",
                 secrets.token_hex(20),
                 f"{secrets.token_hex(20)}@something.com",
-                hashed_password,
+                secrets.token_hex(16),
             )
-            user = await user_service.get_user(user_id=user_id)
-
-            return user, password
+            return await user_service.get_user(user_id=user_id)
 
     return _create
 
 
 @pytest.fixture
 async def dummy_user(create_test_user: CreateTestUser) -> User:
-    user, _ = await create_test_user()
-    return user
+    return await create_test_user()
 
 
 @pytest.fixture

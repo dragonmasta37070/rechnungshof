@@ -6,7 +6,6 @@ from pydantic import BaseModel
 
 from abrechnung.application.export_import import ExportImportService
 from abrechnung.application.groups import GroupService
-from abrechnung.application.users import UserService
 from abrechnung.domain.export_import import GroupJsonExportV1
 from abrechnung.domain.groups import (
     Group,
@@ -16,8 +15,8 @@ from abrechnung.domain.groups import (
     GroupPreview,
 )
 from abrechnung.domain.users import User
-from abrechnung.http.auth import get_current_user
-from abrechnung.http.dependencies import get_export_import_service, get_group_service, get_user_service
+from abrechnung.http.auth import get_current_user, get_current_user_optional
+from abrechnung.http.dependencies import get_export_import_service, get_group_service
 
 router = APIRouter(
     prefix="/api",
@@ -31,7 +30,6 @@ router = APIRouter(
 
 class PreviewGroupPayload(BaseModel):
     invite_token: str
-    logged_in_user_token: str | None = None
 
 
 @router.post(
@@ -43,12 +41,12 @@ class PreviewGroupPayload(BaseModel):
 )
 async def preview_group(
     payload: PreviewGroupPayload,
+    user: User | None = Depends(get_current_user_optional),
     group_service: GroupService = Depends(get_group_service),
-    user_service: UserService = Depends(get_user_service),
 ):
-    user = None
-    if payload.logged_in_user_token:
-        user = await user_service.get_user_from_token(token=payload.logged_in_user_token)
+    # The token used to be smuggled through the request body as
+    # `logged_in_user_token`. It now travels in the Authorization header like
+    # every other authenticated call, so there is exactly one way in.
     return await group_service.preview_group(
         user=user,
         invite_token=payload.invite_token,

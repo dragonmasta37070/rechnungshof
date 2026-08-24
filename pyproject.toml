@@ -24,7 +24,6 @@ dependencies = [
     "pydantic[email]~=2.13.4",
     "pydantic-settings==2.14.1",
     "python-jose[cryptography]~=3.5.0",
-    "bcrypt~=5.0.0",
     "python-multipart~=0.0.28",
     "PyYAML~=6.0.3",
     "httpx>=0.28.1",
@@ -39,7 +38,7 @@ dev = [
     "bump-my-version~=1.2.6",
 ]
 lint = ["ruff", "ty==0.0.12", "types-PyYAML~=6.0", "pylint==4.0.5"]
-test = ["aiosmtpd~=1.4", "pytest", "pytest-asyncio", "pytest-cov"]
+test = ["pytest", "pytest-asyncio", "pytest-cov"]
 docs = ["sphinx", "myst-parser", "sphinx-autobuild", "sphinx-copybutton", "sphinx-rtd-theme", "sphinxcontrib-openapi"]
 
 [project.urls]
