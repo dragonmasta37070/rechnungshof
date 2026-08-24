@@ -20,7 +20,7 @@ Upstream remote is configured as `upstream`; pull changes with `git fetch upstre
 
 ```bash
 cp .env.example .env          # then fill in the secrets, see below
-docker compose -f docker-compose.devel.yaml up -d --build
+docker compose -f docker-compose.devel.yaml up -d postgres api mailer mailhog
 docker compose -f docker-compose.devel.yaml logs -f api
 docker compose -f docker-compose.devel.yaml down            # keeps the database
 docker compose -f docker-compose.devel.yaml down -v         # wipes it
@@ -39,19 +39,20 @@ Needed for `ABRECHNUNG_DATABASE__PASSWORD` (must equal `POSTGRES_PASSWORD`) and
 
 | Port | Service | Notes |
 |------|---------|-------|
-| **8080** | `nginx` | the only entrypoint — proxies `/api` to the backend and everything else to the frontend |
-| **8026** | `mailhog` | web inbox for outgoing mail in dev (8025 → container; the host port is 8026 because 8025 is taken locally by an unrelated `mailpit` container) |
-| **8080** | `api` | published directly. Phase 2 is verified with curl, and the future Angular SPA talks to the API rather than through nginx. Note this collides with `nginx` — see below. |
+| **9990** | `nginx` | proxies `/api` to the backend and everything else to the frontend. Not started, see "Known breakage". |
+| **9925** | `mailhog` | web inbox for outgoing mail in dev |
+| **9980** | `api` | published directly. Phase 2 is verified with curl, and the future Angular SPA talks to the API rather than through nginx. |
 | — | `postgres` | not published; reach it via `docker compose exec postgres psql -U abrechnung` |
 
-API docs once running: <http://localhost:8080/docs> — the OpenAPI document is at
+API docs once running: <http://localhost:9980/docs> — the OpenAPI document is at
 `/openapi.json`, while the routes themselves live under `/api/v1/...`. nginx is what adds
 the `/api` prefix in the browser; against the container you address `/api/v1/...` directly.
 
 **`nginx` and `frontend-dev` are currently not running.** The frontend image cannot be built
 until the BuildKit cache is cleared (`docker builder prune -af`) — see "Known breakage".
-Because nginx is down, `api` has claimed host port 8080. Once the frontend builds again,
-drop the `ports:` block from `api` and let nginx own 8080 as upstream intended.
+**All host ports follow a 99XX scheme** so this stack never collides with the other local
+Docker projects on this machine (which occupy 8025, 8872, 3001, 5432 among others). Container
+ports are unchanged; only the host side is remapped.
 
 Postgres data lives in `./data/pg` (bind mount, gitignored). Delete that directory for a
 truly clean database.
@@ -105,7 +106,8 @@ not introduce Alembic or another migration tool.
    no registration mail was ever delivered. Corrected to `mailhog`. (Moot after Phase 2, which
    removes the email stack entirely — recorded because it silently breaks registration on
    upstream `master`.)
-6. Mailhog host port 8025 → 8026, purely local: an unrelated `mailpit` container owns 8025.
+6. Host ports remapped to a 99XX scheme (api 9980, mailhog 9925, nginx 9990) to stay clear of
+   the other Docker stacks running on this machine. Container-internal ports are untouched.
 
 ## Known breakage
 
