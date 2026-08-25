@@ -64,7 +64,33 @@ Compose project name: `rechnungshof`.
 
 ## Production notes (Komodo + Traefik)
 
-Base the deployment on `docker-compose.prod.yaml` and add:
+Use **`docker-compose.komodo.yaml`**, not `docker-compose.prod.yaml`. The latter pulls
+`quay.io/abrechnung/*:latest-release`, which is upstream's image and still contains the
+local email/password login this fork removed — deploying it would silently give you
+Abrechnung back instead of Rechnungshof. The Komodo file builds the api from the checked
+out repository, ships its own Postgres with a named volume, carries the Traefik labels,
+and publishes no ports.
+
+There is no frontend service: the React UI is being replaced by a separate Angular app, so
+this deployment is an API, with `/docs` as the human-facing entry point.
+
+Everything is parameterised; set these in Komodo's environment section:
+
+| Variable | Example |
+|---|---|
+| `RECHNUNGSHOF_DOMAIN` | `rechnungshof.moretta.at` |
+| `TRAEFIK_NETWORK` | the external network Traefik already uses |
+| `TRAEFIK_ENTRYPOINT` | `websecure` |
+| `TRAEFIK_CERTRESOLVER` | whatever your Traefik calls it |
+| `POSTGRES_USER` / `POSTGRES_DB` | `abrechnung` |
+| `POSTGRES_PASSWORD` | generate, 64 chars |
+| `ABRECHNUNG_API__SECRET_KEY` | generate, 64 chars |
+| `ABRECHNUNG_OIDC__ISSUER` / `__AUDIENCE` / `__JWKS_URL` | read off Authentik's `.well-known` document |
+
+If you would rather run against an existing database, drop the `postgres` service and point
+`ABRECHNUNG_DATABASE__*` at it.
+
+For reference, a deployment built on `docker-compose.prod.yaml` instead would have to supply:
 
 - **A database.** prod ships none on purpose. Point `ABRECHNUNG_DATABASE__HOST/USER/DBNAME/PASSWORD`
   at your own Postgres. Postgres 14+ (devel uses 14-alpine).

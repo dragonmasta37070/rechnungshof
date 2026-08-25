@@ -1,0 +1,94 @@
+# Production stack for Komodo + Traefik.
+#
+# Deliberately NOT based on docker-compose.prod.yaml: that one pulls
+# quay.io/abrechnung/*:latest-release, which is upstream's image and still has
+# the local email/password login this fork removed. This file builds the api
+# from the repository Komodo checks out, so what runs is actually Rechnungshof.
+#
+# There is no frontend service. The React UI is being replaced by a separate
+# Angular app, so for now this deployment is an API: Traefik routes the domain
+# straight to it, and /docs is the human-facing entry point.
+#
+# Every value below comes from Komodo's environment section — nothing secret
+# lives in this file.
+
+name: rechnungshof
+
+services:
+    api:
+        container_name: rechnungshof_backend
+        build:
+            context: .
+            dockerfile: docker/Dockerfile-api
+        command: api
+        restart: unless-stopped
+        depends_on:
+            postgres:
+                condition: service_healthy
+        environment:
+            ABRECHNUNG_SERVICE__NAME: Rechnungshof
+
+            ABRECHNUNG_DATABASE__HOST: postgres
+            ABRECHNUNG_DATABASE__USER: ${POSTGRES_USER}
+            ABRECHNUNG_DATABASE__DBNAME: ${POSTGRES_DB}
+            ABRECHNUNG_DATABASE__PASSWORD: ${POSTGRES_PASSWORD}
+
+            # Must be the public HTTPS URL: it ends up in generated links.
+            ABRECHNUNG_API__BASE_URL: https://${RECHNUNGSHOF_DOMAIN}
+            # Container-internal port. Traefik targets this, see the label below.
+            # Do not change it to a host port — nothing is published here.
+            ABRECHNUNG_API__PORT: 8080
+            ABRECHNUNG_API__SECRET_KEY: ${ABRECHNUNG_API__SECRET_KEY}
+            ABRECHNUNG_API__ID: default
+
+            # Read these off the .well-known document, do not hand-assemble them.
+            # ISSUER must match the token's iss claim exactly, trailing slash included.
+            ABRECHNUNG_OIDC__ISSUER: ${ABRECHNUNG_OIDC__ISSUER}
+            ABRECHNUNG_OIDC__AUDIENCE: ${ABRECHNUNG_OIDC__AUDIENCE}
+            ABRECHNUNG_OIDC__JWKS_URL: ${ABRECHNUNG_OIDC__JWKS_URL}
+        healthcheck:
+            test: ["CMD", "/usr/bin/curl", "--connect-timeout", "10", "--silent", "http://127.0.0.1:8080/"]
+            interval: 30s
+            timeout: 15s
+            retries: 5
+            start_period: 60s
+        networks:
+            - internal
+            - proxy
+        labels:
+            traefik.enable: "true"
+            traefik.docker.network: ${TRAEFIK_NETWORK}
+            traefik.http.routers.rechnungshof.rule: Host(`${RECHNUNGSHOF_DOMAIN}`)
+            traefik.http.routers.rechnungshof.entrypoints: ${TRAEFIK_ENTRYPOINT}
+            traefik.http.routers.rechnungshof.tls: "true"
+            traefik.http.routers.rechnungshof.tls.certresolver: ${TRAEFIK_CERTRESOLVER}
+            traefik.http.services.rechnungshof.loadbalancer.server.port: "8080"
+
+    postgres:
+        container_name: rechnungshof_postgres
+        image: docker.io/postgres:14-alpine
+        restart: unless-stopped
+        environment:
+            POSTGRES_USER: ${POSTGRES_USER}
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+            POSTGRES_DB: ${POSTGRES_DB}
+        healthcheck:
+            test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 30s
+        volumes:
+            - pgdata:/var/lib/postgresql/data
+        # Database stays off the proxy network — Traefik has no business reaching it.
+        networks:
+            - internal
+
+volumes:
+    pgdata:
+
+networks:
+    internal:
+    proxy:
+        external: true
+        name: ${TRAEFIK_NETWORK}
