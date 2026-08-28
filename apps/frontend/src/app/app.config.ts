@@ -13,7 +13,7 @@ import {
   StsConfigHttpLoader,
   StsConfigLoader,
 } from 'angular-auth-oidc-client';
-import { catchError, firstValueFrom, map, of } from 'rxjs';
+import { catchError, firstValueFrom, map, of, timeout } from 'rxjs';
 
 import { AppConfigService, appConfig$, redirectUrl } from './core/app-config';
 import { authInterceptor } from './core/auth.interceptor';
@@ -71,8 +71,13 @@ export const appConfig: ApplicationConfig = {
       },
     }),
     provideAppInitializer(async () => {
+      // Both injections must happen synchronously: `inject()` is only legal
+      // inside the injection context, and the first `await` below leaves it.
+      const appConfigService = inject(AppConfigService);
+      const oidc = inject(OidcSecurityService);
+
       // Runtime config first — the OIDC config loader derives from it.
-      await inject(AppConfigService).load();
+      await appConfigService.load();
 
       // Exactly once, before routing. This both restores an existing session
       // and performs the code exchange when the browser has just come back from
@@ -81,9 +86,12 @@ export const appConfig: ApplicationConfig = {
       // A failure here must not block bootstrap — the guard sends the user to
       // the login screen instead of leaving them on a blank page.
       await firstValueFrom(
-        inject(OidcSecurityService)
-          .checkAuth()
-          .pipe(catchError(() => of(null))),
+        oidc.checkAuth().pipe(
+          // A hung discovery request must not hold bootstrap hostage — a blank
+          // page is worse than an app that starts logged out.
+          timeout({ first: 15_000, with: () => of(null) }),
+          catchError(() => of(null)),
+        ),
       );
     }),
   ],
