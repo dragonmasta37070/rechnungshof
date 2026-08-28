@@ -1,15 +1,8 @@
 import { Component, inject, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { OidcSecurityService } from 'angular-auth-oidc-client';
 
+import { Api, User } from '../../api/api';
 import { ProviderStatusService } from '../../core/provider-status';
-
-interface Profile {
-  id: number;
-  username: string;
-  email: string;
-  oidc_subject: string | null;
-}
 
 /**
  * Placeholder landing route. Its only job today is to prove the whole chain
@@ -49,16 +42,16 @@ interface Profile {
   styleUrl: './home.css',
 })
 export class Home {
-  private readonly http = inject(HttpClient);
+  private readonly api = inject(Api);
   private readonly oidc = inject(OidcSecurityService);
   protected readonly providerStatus = inject(ProviderStatusService);
 
-  protected readonly profile = signal<Profile | null>(null);
+  protected readonly profile = signal<User | null>(null);
   protected readonly error = signal<string | null>(null);
 
   constructor() {
     // This is the call that provisions the account on first sign-in.
-    this.http.get<Profile>('/api/v1/profile').subscribe({
+    this.api.profile().subscribe({
       next: (p) => this.profile.set(p),
       error: () => this.error.set('Profil konnte nicht geladen werden.'),
     });

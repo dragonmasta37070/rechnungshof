@@ -51,3 +51,10 @@ generate-openapi:
 	mkdir -p api
 	uv run abrechnung -c config.yaml show-openapi > api/openapi.json
 	pnpm -w -r run generate-openapi
+
+.PHONY: generate-openapi-angular
+generate-openapi-angular:
+	mkdir -p api
+	curl -sf http://localhost:9980/openapi.json | python3 -m json.tool > api/openapi.json
+	pnpm exec typed-openapi api/openapi.json \
+		-o apps/frontend/src/app/api/schema.ts --schemas-only
