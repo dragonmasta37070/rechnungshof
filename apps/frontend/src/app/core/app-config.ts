@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable, signal } from '@angular/core';
-import { firstValueFrom, Observable, shareReplay } from 'rxjs';
+import { firstValueFrom, Observable, retry, shareReplay } from 'rxjs';
 
 /** The `oidc` block of `GET /api/config`. */
 export interface OidcConfig {
@@ -32,7 +32,12 @@ let shared: Observable<AppConfig> | null = null;
  * app would fire two identical requests before it has even rendered.
  */
 export function appConfig$(http: HttpClient): Observable<AppConfig> {
-  shared ??= http.get<AppConfig>('/api/config').pipe(shareReplay(1));
+  shared ??= http.get<AppConfig>('/api/config').pipe(
+    // Bootstrap depends on this: a single dropped request would otherwise take
+    // down the whole app with a blank page.
+    retry({ count: 2, delay: 1000 }),
+    shareReplay(1),
+  );
   return shared;
 }
 

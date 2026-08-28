@@ -6,6 +6,7 @@ import {
 } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { Router } from '@angular/router';
 import { OidcSecurityService } from 'angular-auth-oidc-client';
 import { firstValueFrom, of } from 'rxjs';
 
@@ -78,10 +79,13 @@ describe('authInterceptor', () => {
   let controller: HttpTestingController;
   let providerStatus: ProviderStatusService;
   let authorizeCalls: number;
+  let navigations: unknown[][];
 
   beforeEach(() => {
     resetAppConfigCache();
+    sessionStorage.clear();
     authorizeCalls = 0;
+    navigations = [];
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(withInterceptors([authInterceptor])),
@@ -92,6 +96,16 @@ describe('authInterceptor', () => {
             getAccessToken: () => of('a-token'),
             authorize: () => {
               authorizeCalls += 1;
+            },
+          },
+        },
+        {
+          provide: Router,
+          useValue: {
+            url: '/groups/7',
+            navigate: (commands: unknown[]) => {
+              navigations.push(commands);
+              return Promise.resolve(true);
             },
           },
         },
@@ -134,7 +148,10 @@ describe('authInterceptor', () => {
     expect(authorizeCalls).toBe(0);
   });
 
-  it('treats 401 as a credential problem and re-authorizes', async () => {
+  it('sends the user to /login on 401 without starting an authorization itself', async () => {
+    // Never authorize() from here: a backend that 401s a structurally valid
+    // token (unprovisioned user, missing email claim, clock skew) would loop
+    // forever, because Authentik's session cookie keeps granting silently.
     const failed = new Promise<HttpErrorResponse>((resolve) => {
       http.get('/api/v1/profile').subscribe({ error: resolve });
     });
@@ -143,8 +160,30 @@ describe('authInterceptor', () => {
       .flush('nope', { status: 401, statusText: 'Unauthorized' });
 
     expect((await failed).status).toBe(401);
-    expect(authorizeCalls).toBe(1);
+    expect(authorizeCalls).toBe(0);
+    expect(navigations).toEqual([['/login']]);
+    // The attempted URL survives the round trip through Authentik.
+    expect(sessionStorage.getItem('rechnungshof.returnUrl')).toBe('/groups/7');
     expect(providerStatus.isUnavailable()).toBe(false);
+  });
+
+  it('never attaches the token to a cross-origin request', () => {
+    // The OIDC library injects this same root HttpClient, so its calls to
+    // Authentik's discovery/token/userinfo endpoints pass through here. A
+    // bearer on those is wrong and forces a CORS preflight that can break
+    // silent renew.
+    http.get('https://auth.moretta.at/application/o/rechnungshof/token/').subscribe();
+    const req = controller.expectOne('https://auth.moretta.at/application/o/rechnungshof/token/');
+    expect(req.request.headers.has('Authorization')).toBe(false);
+    req.flush({});
+  });
+
+  it('does not confuse a look-alike path with the public config endpoint', () => {
+    // Prefix matching would let /api/configuration skip the header.
+    http.get('/api/configuration').subscribe();
+    const req = controller.expectOne('/api/configuration');
+    expect(req.request.headers.get('Authorization')).toBe('Bearer a-token');
+    req.flush({});
   });
 
   it('clears the outage flag once a call succeeds again', async () => {

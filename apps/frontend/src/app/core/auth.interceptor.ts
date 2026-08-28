@@ -1,28 +1,62 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { OidcSecurityService } from 'angular-auth-oidc-client';
+import { Router } from '@angular/router';
 import { catchError, switchMap, tap, throwError } from 'rxjs';
 
 import { ProviderStatusService } from './provider-status';
+import { rememberReturnUrl } from './return-url';
+import { OidcSecurityService } from 'angular-auth-oidc-client';
 
-/** Public endpoints: sending a token here would be pointless, not harmful. */
+/** Backend paths that are served without authentication. */
 const UNAUTHENTICATED = ['/api/config', '/api/version'];
 
 /**
- * Attaches the Authentik access token and translates the two failure modes the
- * backend deliberately keeps apart.
+ * Whether this request may carry our access token.
  *
- * 401 means the credential is bad — expired, tampered with, wrong audience.
- * 503 means the backend could not *reach* Authentik to check it, so the token
- * may well be fine. Treating 503 as a logout would throw every user out on any
- * provider hiccup and hide an outage behind what looks like bad credentials,
- * which is exactly why the backend distinguishes them in the first place.
+ * An allowlist, not a denylist, and deliberately strict about the origin. The
+ * OIDC library injects the same root `HttpClient` we do, so its calls to
+ * Authentik — discovery, token exchange, userinfo, revocation — pass through
+ * this interceptor too. Those are absolute URLs to another origin: attaching a
+ * bearer to them is wrong (the token endpoint authenticates with the code
+ * verifier, not a bearer), it forces a CORS preflight that can break silent
+ * renew outright, and it hands our access token to an endpoint that never
+ * asked for it.
+ *
+ * Matching on the parsed pathname rather than a raw `startsWith` also keeps
+ * `/api/configuration` from being mistaken for the public `/api/config`.
+ */
+function mayCarryToken(rawUrl: string): boolean {
+  let url: URL;
+  try {
+    url = new URL(rawUrl, window.location.origin);
+  } catch {
+    return false;
+  }
+
+  if (url.origin !== window.location.origin) {
+    return false;
+  }
+  if (!url.pathname.startsWith('/api/')) {
+    return false;
+  }
+  return !UNAUTHENTICATED.includes(url.pathname);
+}
+
+/**
+ * Attaches the access token and translates the two failure modes the backend
+ * deliberately keeps apart.
+ *
+ * 401 means the credential is bad. 503 means the backend could not *reach*
+ * Authentik to check it, so the token may well be fine — treating that as a
+ * logout would throw every user out on a provider hiccup and disguise an outage
+ * as a wave of bad credentials.
  */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const oidc = inject(OidcSecurityService);
   const providerStatus = inject(ProviderStatusService);
+  const router = inject(Router);
 
-  if (UNAUTHENTICATED.some((path) => req.url.startsWith(path))) {
+  if (!mayCarryToken(req.url)) {
     return next(req);
   }
 
@@ -31,9 +65,9 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       const authed = token ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } }) : req;
 
       return next(authed).pipe(
-        // A successful call is the proof that the provider is reachable again,
-        // so the outage banner clears on the next good response rather than
-        // needing a poll or a reload.
+        // A successful call proves the provider is reachable again, so the
+        // outage banner clears on the next good response rather than needing a
+        // poll or a reload.
         tap(() => providerStatus.reportReachable()),
         catchError((error: unknown) => {
           if (error instanceof HttpErrorResponse) {
@@ -42,9 +76,17 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
               providerStatus.reportUnavailable();
             } else if (error.status === 401) {
               providerStatus.reportReachable();
-              // Let the library decide between a silent renew and a fresh login
-              // rather than hard-redirecting on every single 401.
-              oidc.authorize();
+              // Send the user to the login screen — never straight into
+              // `authorize()`. A backend that answers 401 for a structurally
+              // valid token (unprovisioned user, missing email claim, clock
+              // skew) would otherwise loop: authorize -> Authentik's session
+              // cookie is still good -> silent consent -> back here -> 401.
+              // Concurrent 401s would also each start their own authorization
+              // with its own code verifier and race each other's state.
+              if (!router.url.startsWith('/login')) {
+                rememberReturnUrl(router.url);
+                void router.navigate(['/login']);
+              }
             } else {
               providerStatus.reportReachable();
             }
