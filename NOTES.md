@@ -174,6 +174,31 @@ this smoke test; Phase 2 decides whether to delete it or link it to an `oidc_sub
 Done. The backend is a pure resource server — it validates access tokens and does
 nothing else. It never redirects, never exchanges a code, never sees a credential.
 
+### How the frontend gets its configuration
+
+`GET /api/config` (unauthenticated) serves the browser the two values it needs to run
+the PKCE flow itself:
+
+```json
+{ "oidc": { "issuer": "...", "client_id": "..." } }
+```
+
+Both are public by definition — the client id appears in every authorization URL, the
+issuer is the provider's discovery identity. Neither is a credential, which is why the
+Authentik provider is a public client.
+
+This exists because an Angular build is static: container env vars never reach the
+browser. Serving them means **one built artifact works against every environment** —
+set `ABRECHNUNG_OIDC__*` per deployment and the frontend follows, no rebuild.
+
+`client_id` is served from `ABRECHNUNG_OIDC__AUDIENCE`. They are the same value by
+definition (the audience the backend validates is the client the browser authenticates
+as), so one variable means no drift.
+
+The **redirect URI needs no configuration at all** — the SPA derives
+`<origin>/auth/callback` from its own location. It only has to match what is registered
+in Authentik: `https://rechnungshof.moretta.at/auth/callback`.
+
 ### What the operator has to configure
 
 In Authentik: create an **OAuth2/OpenID provider**, set the client type to **public**
