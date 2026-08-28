@@ -1,5 +1,5 @@
-@import "./design-tokens.css";
-@import "./fonts.css";
+@import './design-tokens.css';
+@import './fonts.css';
 
 * {
   box-sizing: border-box;
