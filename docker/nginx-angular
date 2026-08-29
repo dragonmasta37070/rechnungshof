@@ -1,0 +1,56 @@
+server {
+    listen 80;
+    listen [::]:80;
+
+    server_name _;
+    charset utf-8;
+
+    access_log /dev/stdout;
+    error_log /dev/stderr;
+
+    # The SPA calls /api on its own origin — that is what keeps the access token
+    # same-origin and lets the interceptor refuse to attach it to anything else.
+    # Proxying here rather than routing /api separately in Traefik means the app
+    # is one origin from the browser's point of view, in every environment.
+    location /api {
+        # Docker's embedded DNS, with the target held in a variable on purpose.
+        # A static `upstream` block is resolved once at startup, so nginx refuses
+        # to boot at all while the api container is not yet resolvable — one slow
+        # backend start and the frontend dies with
+        # "host not found in upstream". Resolving per request turns that into a
+        # recoverable 502 and also survives the api getting a new IP on restart.
+        resolver 127.0.0.11 valid=10s ipv6=off;
+        set $api_upstream "http://api:8080";
+        proxy_pass $api_upstream$request_uri;
+
+        proxy_http_version 1.1;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_buffering off;
+        proxy_redirect off;
+    }
+
+    root /var/www/rechnungshof/;
+    index index.html;
+
+    # Build artefacts carry a content hash in the filename, so they can be cached
+    # forever. The manifest is excluded: its name never changes.
+    location ~* \.(js|css|woff2|ttf|png|svg|ico)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # Client-side routing: /groups/5 and /auth/callback are app routes, not
+    # files, so anything that is not a real file falls back to the shell.
+    #
+    # The no-cache header belongs here rather than on `location /index.html`,
+    # which only ever matches that literal path — every real navigation arrives
+    # as `/` or an app route and is served through this fallback. A cached shell
+    # would leave browsers requesting hashed chunks that a deploy has removed.
+    location / {
+        add_header Cache-Control "no-cache";
+        try_files $uri /index.html =404;
+    }
+}

@@ -2,12 +2,13 @@
 #
 # Deliberately NOT based on docker-compose.prod.yaml: that one pulls
 # quay.io/abrechnung/*:latest-release, which is upstream's image and still has
-# the local email/password login this fork removed. This file builds the api
+# the local email/password login this fork removed. This file builds both images
 # from the repository Komodo checks out, so what runs is actually Rechnungshof.
 #
-# There is no frontend service. The React UI is being replaced by a separate
-# Angular app, so for now this deployment is an API: Traefik routes the domain
-# straight to it, and /docs is the human-facing entry point.
+# Traefik points at the frontend, not the api. nginx inside the frontend
+# container serves the Angular app and proxies /api to the backend, so the
+# browser sees one origin — which is what keeps the access token same-origin
+# and lets the app's interceptor refuse to attach it anywhere else.
 #
 # Every value below comes from Komodo's environment section — nothing secret
 # lives in this file.
@@ -15,6 +16,30 @@
 name: rechnungshof
 
 services:
+    frontend:
+        container_name: rechnungshof_frontend
+        build:
+            # Root context on purpose: the Angular app imports @abrechnung/core
+            # and friends from source through tsconfig path aliases, so the whole
+            # pnpm workspace has to be in the build context.
+            context: .
+            dockerfile: docker/Dockerfile-frontend-angular
+        restart: unless-stopped
+        depends_on:
+            api:
+                condition: service_healthy
+        networks:
+            - internal
+            - proxy
+        labels:
+            traefik.enable: "true"
+            traefik.docker.network: ${TRAEFIK_NETWORK}
+            traefik.http.routers.rechnungshof.rule: Host(`${RECHNUNGSHOF_DOMAIN}`)
+            traefik.http.routers.rechnungshof.entrypoints: ${TRAEFIK_ENTRYPOINT}
+            traefik.http.routers.rechnungshof.tls: "true"
+            traefik.http.routers.rechnungshof.tls.certresolver: ${TRAEFIK_CERTRESOLVER}
+            traefik.http.services.rechnungshof.loadbalancer.server.port: "80"
+
     api:
         container_name: rechnungshof_backend
         build:
@@ -35,14 +60,16 @@ services:
 
             # Must be the public HTTPS URL: it ends up in generated links.
             ABRECHNUNG_API__BASE_URL: https://${RECHNUNGSHOF_DOMAIN}
-            # Container-internal port. Traefik targets this, see the label below.
-            # Do not change it to a host port — nothing is published here.
+            # Container-internal port, reached by nginx in the frontend container.
+            # Nothing is published to the host here.
             ABRECHNUNG_API__PORT: 8080
             ABRECHNUNG_API__SECRET_KEY: ${ABRECHNUNG_API__SECRET_KEY}
             ABRECHNUNG_API__ID: default
 
-            # Read these off the .well-known document, do not hand-assemble them.
-            # ISSUER must match the token's iss claim exactly, trailing slash included.
+            # Read these off Authentik's .well-known document, do not hand-assemble
+            # them. ISSUER must match the token's iss claim exactly, trailing
+            # slash included. AUDIENCE is the provider's client id, and the app
+            # picks it up from GET /api/config — so it is set once, here.
             ABRECHNUNG_OIDC__ISSUER: ${ABRECHNUNG_OIDC__ISSUER}
             ABRECHNUNG_OIDC__AUDIENCE: ${ABRECHNUNG_OIDC__AUDIENCE}
             ABRECHNUNG_OIDC__JWKS_URL: ${ABRECHNUNG_OIDC__JWKS_URL}
@@ -52,17 +79,10 @@ services:
             timeout: 15s
             retries: 5
             start_period: 60s
+        # No proxy network: the api is only ever reached through the frontend's
+        # nginx, so Traefik has no route to it and cannot expose it by accident.
         networks:
             - internal
-            - proxy
-        labels:
-            traefik.enable: "true"
-            traefik.docker.network: ${TRAEFIK_NETWORK}
-            traefik.http.routers.rechnungshof.rule: Host(`${RECHNUNGSHOF_DOMAIN}`)
-            traefik.http.routers.rechnungshof.entrypoints: ${TRAEFIK_ENTRYPOINT}
-            traefik.http.routers.rechnungshof.tls: "true"
-            traefik.http.routers.rechnungshof.tls.certresolver: ${TRAEFIK_CERTRESOLVER}
-            traefik.http.services.rechnungshof.loadbalancer.server.port: "8080"
 
     postgres:
         container_name: rechnungshof_postgres
@@ -80,7 +100,6 @@ services:
             start_period: 30s
         volumes:
             - pgdata:/var/lib/postgresql/data
-        # Database stays off the proxy network — Traefik has no business reaching it.
         networks:
             - internal
 
