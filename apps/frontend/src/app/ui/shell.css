@@ -1,0 +1,167 @@
+:host {
+  display: block;
+  min-height: 100dvh;
+}
+
+.outage {
+  margin: 0;
+  padding: var(--space-2) var(--space-4);
+  background: var(--elevated);
+  border-bottom: 1px solid var(--border);
+  color: var(--color-warning);
+  font-size: 12px;
+  text-align: center;
+}
+
+.frame {
+  display: flex;
+  min-height: 100dvh;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── Sidebar: desktop only ─────────────────────────────────────────────── */
+
+.sidebar {
+  display: none;
+}
+
+.brand {
+  font-family: var(--font-display);
+  font-size: 26px;
+  padding: var(--space-5) var(--space-4) var(--space-4);
+}
+
+.cap {
+  margin: var(--space-4) var(--space-4) var(--space-2);
+  color: var(--text-3);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.sidebar ul {
+  list-style: none;
+  margin: 0;
+  padding: 0 var(--space-2);
+}
+
+.sidebar a {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--touch-target-min);
+  padding: 0 var(--space-3);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  color: var(--text-2);
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.sidebar a:hover {
+  background: var(--elevated);
+}
+
+.sidebar a.active,
+.sidebar a.current {
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+  color: var(--text);
+}
+
+.group-list a {
+  /* Long group names must not push the sidebar wider. */
+  display: block;
+  overflow: hidden;
+  line-height: var(--touch-target-min);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-top: auto;
+  padding: var(--space-4);
+  border-top: 1px solid var(--hairline);
+  color: var(--text-3);
+  font-size: 13px;
+}
+
+.sidebar-footer span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-footer button {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: var(--touch-target-min);
+  height: var(--touch-target-min);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: none;
+  color: var(--text-3);
+  cursor: pointer;
+}
+
+.sidebar-footer button:hover {
+  background: var(--elevated);
+  color: var(--text);
+}
+
+/* ── Tab bar: mobile only ──────────────────────────────────────────────── */
+
+.tabbar {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  background: var(--surface);
+  border-top: 1px solid var(--hairline);
+  /* The generous bottom padding is the handoff's, and it doubles as room for
+     the home indicator on a notched phone. */
+  padding: 6px 8px calc(30px + env(safe-area-inset-bottom));
+  z-index: 10;
+}
+
+.tabbar a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-height: 48px;
+  color: var(--text-3);
+  font-size: 11px;
+  text-decoration: none;
+}
+
+.tabbar a.active {
+  color: var(--accent);
+}
+
+@media (min-width: 900px) {
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    flex: none;
+    width: 248px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+  }
+
+  .tabbar {
+    display: none;
+  }
+}

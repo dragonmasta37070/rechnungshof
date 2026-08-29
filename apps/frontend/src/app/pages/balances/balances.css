@@ -1,0 +1,59 @@
+.hero {
+  margin-bottom: var(--space-2);
+}
+
+.hero-label {
+  margin: 0;
+  color: var(--text-3);
+  font-size: 12px;
+}
+
+.hero-value {
+  margin: var(--space-1) 0 var(--space-4);
+  font-size: 32px;
+  font-weight: 600;
+}
+
+.hero-stats {
+  display: flex;
+  gap: var(--space-6);
+}
+
+.hero-stats .label {
+  margin: 0;
+  color: var(--text-3);
+  font-size: 11px;
+}
+
+.hero-stats .value {
+  margin: 2px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.row.static {
+  cursor: default;
+}
+
+.row.static:hover {
+  background: none;
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-pill);
+  background: var(--elevated);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+@media (min-width: 900px) {
+  .list + .cap {
+    margin-top: var(--space-6);
+  }
+}

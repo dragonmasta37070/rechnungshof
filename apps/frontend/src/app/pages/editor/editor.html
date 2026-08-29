@@ -1,0 +1,184 @@
+<header class="head">
+  <button type="button" class="icon-btn" (click)="close()" aria-label="Schließen">
+    <app-icon name="close" [size]="20" />
+  </button>
+  <div class="head-title">
+    <h1>{{ isNew() ? 'Neue Ausgabe' : 'Ausgabe bearbeiten' }}</h1>
+    <p>{{ group()?.name }}</p>
+  </div>
+  <button type="button" class="save" (click)="save()" [disabled]="saving()">Speichern</button>
+</header>
+
+<div class="body">
+  <section class="amount-field">
+    <div class="amount-input">
+      <input
+        type="text"
+        inputmode="decimal"
+        placeholder="0.00"
+        [value]="value() || ''"
+        (input)="setValue($any($event.target).value)"
+        aria-label="Betrag"
+      />
+      <span class="symbol">{{ symbol() }}</span>
+    </div>
+    <p class="caption">
+      @if (value() > 0) {
+        Aufgeteilt auf {{ participants().length }} Personen
+      } @else {
+        Betrag eingeben
+      }
+    </p>
+    @if (valueError(); as e) {
+      <p class="error">{{ e }}</p>
+    }
+  </section>
+
+  <section class="field">
+    <label for="expense-name">Wofür war das?</label>
+    <div class="input-shell">
+      <app-icon name="tag" [size]="16" />
+      <input
+        id="expense-name"
+        type="text"
+        placeholder="z. B. Großeinkauf bei Billa"
+        [ngModel]="name()"
+        (ngModelChange)="name.set($event)"
+      />
+    </div>
+    @if (nameError(); as e) {
+      <p class="error">{{ e }}</p>
+    }
+  </section>
+
+  <section class="two-col">
+    <div class="field">
+      <label for="expense-date">Datum</label>
+      <div class="date-shell">
+        <app-icon name="calendar" [size]="16" />
+        <span>{{ dateLabel() }}</span>
+        <input
+          id="expense-date"
+          type="date"
+          [ngModel]="billedAt()"
+          (ngModelChange)="billedAt.set($event)"
+          aria-label="Datum"
+        />
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Bezahlt von</label>
+      <button type="button" class="payer" (click)="payerPickerOpen.set(true)">
+        <span class="avatar">{{ creditorName().charAt(0) }}</span>
+        <span class="payer-name">{{ creditorName() }}</span>
+        <app-icon name="chevron-down" [size]="14" />
+      </button>
+    </div>
+  </section>
+
+  <section class="field">
+    <div class="split-head">
+      <label>Aufteilung</label>
+      <button type="button" class="ghost-sm" (click)="splitEvenlyNow()">Gleichmäßig teilen</button>
+    </div>
+
+    <div class="segmented" role="group" aria-label="Aufteilungsart">
+      <button type="button" [class.on]="splitMode() === 'shares'" (click)="setMode('shares')">
+        Anteile
+      </button>
+      <button type="button" [class.on]="splitMode() === 'percent'" (click)="setMode('percent')">
+        Prozent
+      </button>
+      <button type="button" [class.on]="splitMode() === 'absolute'" (click)="setMode('absolute')">
+        Betrag
+      </button>
+    </div>
+
+    <div class="list participants">
+      @for (person of people(); track person.id) {
+        <div class="participant">
+          <button
+            type="button"
+            class="check"
+            [class.on]="isParticipant(person.id)"
+            (click)="toggleParticipant(person.id)"
+            [attr.aria-pressed]="isParticipant(person.id)"
+            [attr.aria-label]="person.name"
+          >
+            @if (isParticipant(person.id)) {
+              <app-icon name="check" [size]="14" />
+            }
+          </button>
+          <span class="participant-name">{{ person.name }}</span>
+
+          @if (isParticipant(person.id)) {
+            @if (splitMode() === 'shares') {
+              <div class="stepper">
+                <button type="button" (click)="step(person.id, -1)" aria-label="Weniger">
+                  <app-icon name="minus" [size]="14" />
+                </button>
+                <span>{{ shareOf(person.id) }}</span>
+                <button type="button" (click)="step(person.id, 1)" aria-label="Mehr">
+                  <app-icon name="plus" [size]="14" />
+                </button>
+              </div>
+            } @else {
+              <div class="share-input">
+                <input
+                  type="text"
+                  inputmode="decimal"
+                  [value]="shareOf(person.id)"
+                  (input)="setShare(person.id, $any($event.target).value)"
+                  [attr.aria-label]="person.name + ' Anteil'"
+                />
+                <span>{{ splitMode() === 'percent' ? '%' : symbol() }}</span>
+              </div>
+            }
+          } @else {
+            <span class="not-involved">nicht beteiligt</span>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="summary">
+      <span>{{ summaryLabel() }}</span>
+      <span>{{ summaryValue() }}</span>
+    </div>
+    @if (showErrors() && validation().error; as e) {
+      <p class="error">{{ e }}</p>
+    }
+  </section>
+
+  @if (!isNew()) {
+    <section class="field">
+      <p class="cap"><span>Gefahrenzone</span></p>
+      <div class="list">
+        <button class="danger-row" type="button" (click)="remove()" [disabled]="saving()">
+          <app-icon name="trash" [size]="16" />
+          Ausgabe löschen
+        </button>
+      </div>
+    </section>
+  }
+</div>
+
+@if (payerPickerOpen()) {
+  <div class="scrim" (click)="payerPickerOpen.set(false)"></div>
+  <div class="picker" role="dialog" aria-label="Bezahlt von">
+    <h2>Bezahlt von</h2>
+    @for (person of people(); track person.id) {
+      <button type="button" class="picker-row" (click)="pickPayer(person.id)">
+        <span class="avatar" [class.selected]="person.id === creditorId()">{{
+          person.name.charAt(0)
+        }}</span>
+        <span>{{ person.name }}</span>
+        @if (person.id === creditorId()) {
+          <app-icon name="check" [size]="16" />
+        }
+      </button>
+    }
+    <button type="button" class="ghost-full" (click)="payerPickerOpen.set(false)">Abbrechen</button>
+  </div>
+}

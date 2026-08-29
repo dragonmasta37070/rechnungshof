@@ -5,7 +5,7 @@ import {
   provideAppInitializer,
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { provideRouter, withComponentInputBinding } from '@angular/router';
 import {
   LogLevel,
   OidcSecurityService,
@@ -61,7 +61,10 @@ export function oidcConfigLoader(http: HttpClient): StsConfigHttpLoader {
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
-    provideRouter(routes),
+    // withComponentInputBinding lets route params arrive as component
+    // inputs, so screens declare what they need instead of reading the
+    // ActivatedRoute by hand.
+    provideRouter(routes, withComponentInputBinding()),
     provideHttpClient(withInterceptors([authInterceptor])),
     provideAuth({
       loader: {

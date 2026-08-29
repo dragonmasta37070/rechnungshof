@@ -1,0 +1,223 @@
+/*
+ * Shared screen primitives from the design handoff: page frames, list groups,
+ * rows, section caps, cards, badge pills and the FAB. Imported by the screens
+ * that use them rather than duplicating the same 40 lines in each.
+ */
+
+.page {
+  padding: 0 var(--space-4) calc(120px + env(safe-area-inset-bottom));
+}
+
+.page-title {
+  padding: 56px var(--space-5) 0;
+}
+
+.page-title h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 38px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.page-title .sub {
+  margin: var(--space-2) 0 var(--space-5);
+  color: var(--text-3);
+  font-size: 12px;
+}
+
+.cap {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: var(--space-5) 0 var(--space-2);
+  color: var(--text-3);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.card {
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.stat-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-1) 0;
+}
+
+.stat-row .label {
+  color: var(--text-2);
+  font-size: 13px;
+}
+
+.stat-row .value {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.list > * + * {
+  border-top: 1px solid var(--hairline);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 66px;
+  padding: var(--row-padding-y) var(--space-4);
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.row:hover {
+  background: var(--elevated);
+}
+
+.row .tile {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  background: var(--elevated);
+  color: var(--text-2);
+}
+
+.row .body {
+  flex: 1;
+  min-width: 0;
+}
+
+.row .title {
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.row .sub {
+  margin-top: 2px;
+  overflow: hidden;
+  color: var(--text-3);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.row .trail {
+  flex: none;
+  text-align: right;
+}
+
+.row .trail .amount {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.row .trail .note {
+  margin-top: 2px;
+  color: var(--text-3);
+  font-size: 11px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.badge.success {
+  background: rgba(76, 175, 125, 0.16);
+  color: var(--color-success);
+}
+
+.badge.error {
+  background: rgba(240, 92, 92, 0.16);
+  color: var(--color-error);
+}
+
+.badge.muted {
+  background: var(--elevated);
+  color: var(--text-3);
+}
+
+.fab {
+  position: fixed;
+  right: var(--space-5);
+  bottom: calc(96px + env(safe-area-inset-bottom));
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  box-shadow: var(--shadow-fab);
+  color: var(--on-accent);
+  cursor: pointer;
+  z-index: 5;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-8) var(--space-4);
+  color: var(--text-3);
+  text-align: center;
+}
+
+.empty strong {
+  color: var(--text);
+  font-size: 17px;
+  font-weight: 600;
+}
+
+@media (min-width: 900px) {
+  .page {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: var(--space-7) var(--space-6) var(--space-8);
+  }
+
+  .page-title {
+    padding: 0;
+  }
+
+  .page-title h1 {
+    font-size: 26px;
+    font-weight: 600;
+    font-family: var(--font-body);
+  }
+
+  .fab {
+    bottom: var(--space-6);
+  }
+}

@@ -63,4 +63,23 @@ export class Api {
   createTransaction(groupId: number, transaction: NewTransaction): Observable<Transaction> {
     return this.http.post<Transaction>(`/api/v1/groups/${groupId}/transactions`, transaction);
   }
+
+  updateTransaction(
+    groupId: number,
+    transactionId: number,
+    transaction: NewTransaction,
+  ): Observable<Transaction> {
+    return this.http.post<Transaction>(
+      `/api/v1/groups/${groupId}/transactions/${transactionId}`,
+      transaction,
+    );
+  }
+
+  deleteTransaction(groupId: number, transactionId: number): Observable<unknown> {
+    return this.http.delete(`/api/v1/groups/${groupId}/transactions/${transactionId}`);
+  }
+
+  createGroup(payload: Schemas.GroupCreatePayload): Observable<Group> {
+    return this.http.post<Group>('/api/v1/groups', payload);
+  }
 }

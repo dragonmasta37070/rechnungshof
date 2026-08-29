@@ -1,0 +1,76 @@
+<div class="page-title">
+  <h1>Ausgaben</h1>
+  <p class="sub">{{ stats().groups }} Gruppen · {{ stats().count }} Ausgaben</p>
+</div>
+
+<div class="page">
+  @if (store.loading()) {
+    <p class="muted">Wird geladen …</p>
+  } @else if (stats().count) {
+    <div class="card">
+      <div class="stat-row">
+        <span class="label">Dein Anteil insgesamt</span>
+        <span class="value"><app-amount [value]="stats().ownShare" /></span>
+      </div>
+      <div class="stat-row">
+        <span class="label">Von dir bezahlt</span>
+        <span class="value"><app-amount [value]="stats().paidByUser" /></span>
+      </div>
+      <div class="stat-row">
+        <span class="label">Ausgaben über alle Gruppen</span>
+        <span class="value">{{ stats().count }}</span>
+      </div>
+    </div>
+
+    @for (section of sections(); track section.label) {
+      <p class="cap">
+        <span>{{ section.label }}</span
+        ><span>{{ section.rows.length }}</span>
+      </p>
+      <div class="list">
+        @for (row of section.rows; track row.transaction.id) {
+          <button class="row" type="button" (click)="openExpense(row)">
+            <span class="tile"><app-icon name="receipt" /></span>
+            <span class="body">
+              <span class="title">{{ row.transaction.name }}</span>
+              <span class="sub">{{ row.group.name }} · Bezahlt von {{ row.payer }}</span>
+            </span>
+            <span class="trail">
+              <span class="amount">
+                <app-amount
+                  [value]="row.transaction.value"
+                  [currency]="row.transaction.currency_identifier"
+                  [absolute]="true"
+                />
+              </span>
+              <span class="note">
+                @if (row.ownShare !== null) {
+                  Dein Anteil
+                  <app-amount
+                    [value]="row.ownShare"
+                    [currency]="row.transaction.currency_identifier"
+                    [absolute]="true"
+                  />
+                } @else {
+                  nicht beteiligt
+                }
+              </span>
+            </span>
+          </button>
+        }
+      </div>
+    }
+  } @else {
+    <div class="empty">
+      <app-icon name="receipt" [size]="32" />
+      <strong>Noch keine Ausgaben</strong>
+      <span>Leg eine Gruppe an und erfasse die erste Ausgabe.</span>
+    </div>
+  }
+</div>
+
+@if (store.groups().length) {
+  <button class="fab" type="button" (click)="newExpense()" aria-label="Ausgabe erfassen">
+    <app-icon name="plus" [size]="22" />
+  </button>
+}

@@ -1,0 +1,5 @@
+.muted {
+  padding: var(--space-6) 0;
+  color: var(--text-3);
+  text-align: center;
+}

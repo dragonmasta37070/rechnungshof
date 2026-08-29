@@ -1,0 +1,149 @@
+@if (group(); as g) {
+  <header class="head">
+    <button type="button" class="back" (click)="back()" aria-label="Zurück zu Gruppen">
+      <app-icon name="chevron-left" [size]="20" />
+    </button>
+    <div>
+      <h1>{{ g.name }}</h1>
+      <p class="sub">
+        {{ members().length }} Mitglieder · {{ sections().length }} Tage mit Ausgaben
+      </p>
+    </div>
+  </header>
+
+  <div class="page">
+    <div class="balance">
+      <button
+        type="button"
+        class="balance-toggle"
+        (click)="panelOpen.set(!panelOpen())"
+        [attr.aria-expanded]="panelOpen()"
+      >
+        <span class="left">
+          <span class="label">{{ ownBalanceLabel() }}</span>
+          <span class="value">
+            <app-amount
+              [value]="ownBalance()"
+              [currency]="g.currency_identifier"
+              [absolute]="true"
+            />
+          </span>
+        </span>
+        <app-icon [name]="panelOpen() ? 'chevron-up' : 'chevron-down'" [size]="14" />
+      </button>
+
+      @if (panelOpen()) {
+        <div class="panel">
+          @for (member of members(); track member.id) {
+            <div class="member">
+              <div class="member-head">
+                <span class="name"
+                  >{{ member.name }}
+                  @if (member.isOwn) {
+                    (du)
+                  }
+                </span>
+                <span class="badge" [class]="member.tone">
+                  <app-amount
+                    [value]="member.balance"
+                    [currency]="g.currency_identifier"
+                    [absolute]="true"
+                  />
+                </span>
+              </div>
+              <div class="bar">
+                <span [class]="member.tone" [style.width.%]="member.width"></span>
+              </div>
+              <p class="detail">
+                Bezahlt
+                <app-amount
+                  [value]="member.totalPaid"
+                  [currency]="g.currency_identifier"
+                  [absolute]="true"
+                />
+                · {{ member.detail }}
+              </p>
+            </div>
+          }
+
+          <hr />
+          <p class="cap"><span>Ausgleich</span></p>
+          @if (plan().length) {
+            <p class="intro">
+              {{ plan().length }} Zahlungen gleichen diese Gruppe aus — der kürzeste Weg.
+            </p>
+            @for (item of plan(); track item.index) {
+              <div class="settle">
+                <div>
+                  <p class="settle-title">
+                    {{ item.title }}
+                    <app-amount
+                      [value]="item.edge.amount"
+                      [currency]="g.currency_identifier"
+                      [absolute]="true"
+                    />
+                  </p>
+                  <p class="settle-sub">{{ item.sub }}</p>
+                </div>
+                <button type="button" (click)="settle(item.index)" [disabled]="settling() !== null">
+                  Ausgleichen
+                </button>
+              </div>
+            }
+          } @else {
+            <p class="intro">Diese Gruppe ist ausgeglichen.</p>
+          }
+        </div>
+      }
+    </div>
+
+    @for (section of sections(); track section.label) {
+      <p class="cap">
+        <span>{{ section.label }}</span
+        ><span>{{ section.rows.length }}</span>
+      </p>
+      <div class="list">
+        @for (row of section.rows; track row.transaction.id) {
+          <button class="row" type="button" (click)="openExpense(row.transaction)">
+            <span class="tile"><app-icon name="receipt" /></span>
+            <span class="body">
+              <span class="title">{{ row.transaction.name }}</span>
+              <span class="sub">Bezahlt von {{ row.payer }} · {{ row.people }} Personen</span>
+            </span>
+            <span class="trail">
+              <span class="amount">
+                <app-amount
+                  [value]="row.transaction.value"
+                  [currency]="row.transaction.currency_identifier"
+                  [absolute]="true"
+                />
+              </span>
+              @if (row.ownShare !== null) {
+                <span class="note">
+                  Dein Anteil
+                  <app-amount
+                    [value]="row.ownShare"
+                    [currency]="row.transaction.currency_identifier"
+                    [absolute]="true"
+                  />
+                </span>
+              }
+            </span>
+          </button>
+        }
+      </div>
+    } @empty {
+      <div class="empty">
+        <app-icon name="receipt" [size]="32" />
+        <strong>Noch keine Ausgaben</strong>
+        <span>Erfasse die erste Ausgabe dieser Gruppe.</span>
+      </div>
+    }
+  </div>
+
+  <button class="fab" type="button" (click)="newExpense()" aria-label="Ausgabe erfassen">
+    <app-icon name="plus" [size]="22" />
+  </button>
+} @else {
+  <p class="loading">Gruppe wird geladen …</p>
+}
