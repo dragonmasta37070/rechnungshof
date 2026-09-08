@@ -135,3 +135,9 @@ dist/
 
 # local postgres volume (docker-compose.devel)
 /data/
+
+# generated knowledge graph, regenerable
+graphify-out/
+
+# macOS
+.DS_Store
