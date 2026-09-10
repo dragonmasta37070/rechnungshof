@@ -1,80 +1,74 @@
 @if (providerStatus.isUnavailable()) {
-  <p class="outage" role="status">Authentik ist gerade nicht erreichbar. Du bleibst angemeldet.</p>
+<p class="outage" role="status">Authentik ist gerade nicht erreichbar. Du bleibst angemeldet.</p>
 }
 
 <div class="frame">
-  <nav class="sidebar" aria-label="Hauptnavigation">
-    <div class="brand">Rechnungshof</div>
+    <nav class="sidebar" aria-label="Hauptnavigation">
+        <div class="brand">Rechnungshof</div>
 
-    @if (store.groups().length) {
-      <p class="cap">Gruppen</p>
-      <ul class="group-list">
-        @for (group of store.groups(); track group.id) {
-          <li>
-            <a
-              [routerLink]="['/groups', group.id]"
-              routerLinkActive="active"
-              [class.current]="group.id === store.activeGroupId()"
-            >
-              {{ group.name }}
-            </a>
-          </li>
+        @if (store.groups().length) {
+        <p class="cap">Gruppen</p>
+        <ul class="group-list">
+            @for (group of store.groups(); track group.id) {
+            <li>
+                <a
+                    [routerLink]="['/groups', group.id]"
+                    routerLinkActive="active"
+                    [class.current]="group.id === store.activeGroupId()"
+                >
+                    {{ group.name }}
+                </a>
+            </li>
+            }
+        </ul>
         }
-      </ul>
-    }
 
-    <p class="cap">Ansicht</p>
-    <ul class="view-list">
-      <li>
-        <a routerLink="/expenses" routerLinkActive="active">
-          <app-icon name="receipt" /> Alle Ausgaben
-        </a>
-      </li>
-      <li>
-        <a
-          routerLink="/groups"
-          routerLinkActive="active"
-          [routerLinkActiveOptions]="{ exact: true }"
-        >
-          <app-icon name="groups" /> Gruppen
-        </a>
-      </li>
-      <li>
-        <a routerLink="/balances" routerLinkActive="active"> <app-icon name="balance" /> Salden </a>
-      </li>
-      <li>
-        <a routerLink="/profile" routerLinkActive="active"> <app-icon name="user" /> Profil </a>
-      </li>
-    </ul>
+        <p class="cap">Ansicht</p>
+        <ul class="view-list">
+            <li>
+                <a routerLink="/expenses" routerLinkActive="active"> <app-icon name="receipt" /> Alle Ausgaben </a>
+            </li>
+            <li>
+                <a routerLink="/groups" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+                    <app-icon name="groups" /> Gruppen
+                </a>
+            </li>
+            <li>
+                <a routerLink="/balances" routerLinkActive="active"> <app-icon name="balance" /> Salden </a>
+            </li>
+            <li>
+                <a routerLink="/profile" routerLinkActive="active"> <app-icon name="user" /> Profil </a>
+            </li>
+        </ul>
 
-    <div class="sidebar-footer">
-      <span>{{ store.profile()?.username }}</span>
-      <button type="button" (click)="signOut()" aria-label="Abmelden">
-        <app-icon name="sign-out" />
-      </button>
-    </div>
-  </nav>
+        <div class="sidebar-footer">
+            <span>{{ store.profile()?.username }}</span>
+            <button type="button" (click)="signOut()" aria-label="Abmelden">
+                <app-icon name="sign-out" />
+            </button>
+        </div>
+    </nav>
 
-  <main class="content">
-    <router-outlet />
-  </main>
+    <main class="content">
+        <router-outlet />
+    </main>
 </div>
 
 <nav class="tabbar" aria-label="Hauptnavigation">
-  <a routerLink="/expenses" routerLinkActive="active">
-    <app-icon name="receipt" />
-    <span>Ausgaben</span>
-  </a>
-  <a routerLink="/groups" routerLinkActive="active">
-    <app-icon name="groups" />
-    <span>Gruppen</span>
-  </a>
-  <a routerLink="/balances" routerLinkActive="active">
-    <app-icon name="balance" />
-    <span>Salden</span>
-  </a>
-  <a routerLink="/profile" routerLinkActive="active">
-    <app-icon name="user" />
-    <span>Profil</span>
-  </a>
+    <a routerLink="/expenses" routerLinkActive="active">
+        <app-icon name="receipt" />
+        <span>Ausgaben</span>
+    </a>
+    <a routerLink="/groups" routerLinkActive="active">
+        <app-icon name="groups" />
+        <span>Gruppen</span>
+    </a>
+    <a routerLink="/balances" routerLinkActive="active">
+        <app-icon name="balance" />
+        <span>Salden</span>
+    </a>
+    <a routerLink="/profile" routerLinkActive="active">
+        <app-icon name="user" />
+        <span>Profil</span>
+    </a>
 </nav>

@@ -1,103 +1,103 @@
 .scrim {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.55);
-  z-index: 20;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 20;
 }
 
 .sheet {
-  position: fixed;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  padding: var(--space-5) var(--space-4) calc(var(--space-8) + env(safe-area-inset-bottom));
-  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-  background: var(--surface);
-  z-index: 21;
-  animation: rise var(--dur-base) var(--ease);
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    padding: var(--space-5) var(--space-4) calc(var(--space-8) + env(safe-area-inset-bottom));
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    background: var(--surface);
+    z-index: 21;
+    animation: rise var(--dur-base) var(--ease);
 }
 
 @keyframes rise {
-  from {
-    transform: translateY(12px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+    from {
+        transform: translateY(12px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
 }
 
 .sheet h2 {
-  margin: 0 0 var(--space-4);
-  font-size: 19px;
-  font-weight: 600;
+    margin: 0 0 var(--space-4);
+    font-size: 19px;
+    font-weight: 600;
 }
 
 .sheet label {
-  display: block;
-  margin-bottom: var(--space-2);
-  color: var(--text-3);
-  font-size: 12px;
+    display: block;
+    margin-bottom: var(--space-2);
+    color: var(--text-3);
+    font-size: 12px;
 }
 
 .sheet input {
-  width: 100%;
-  min-height: 48px;
-  padding: 0 var(--space-3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--elevated);
-  color: var(--text);
-  font: inherit;
+    width: 100%;
+    min-height: 48px;
+    padding: 0 var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--elevated);
+    color: var(--text);
+    font: inherit;
 }
 
 .sheet .hint {
-  margin: var(--space-2) 0 var(--space-5);
-  color: var(--text-3);
-  font-size: 12px;
+    margin: var(--space-2) 0 var(--space-5);
+    color: var(--text-3);
+    font-size: 12px;
 }
 
 .actions {
-  display: flex;
-  gap: var(--space-3);
+    display: flex;
+    gap: var(--space-3);
 }
 
 .actions button {
-  flex: 1;
-  min-height: 48px;
-  border-radius: var(--radius-md);
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
+    flex: 1;
+    min-height: 48px;
+    border-radius: var(--radius-md);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
 }
 
 .actions .ghost {
-  border: 1px solid var(--border);
-  background: none;
-  color: var(--text-2);
+    border: 1px solid var(--border);
+    background: none;
+    color: var(--text-2);
 }
 
 .actions .primary {
-  border: 0;
-  background: var(--accent);
-  color: var(--on-accent);
+    border: 0;
+    background: var(--accent);
+    color: var(--on-accent);
 }
 
 .actions .primary:disabled {
-  opacity: 0.5;
-  cursor: default;
+    opacity: 0.5;
+    cursor: default;
 }
 
 @media (min-width: 900px) {
-  .sheet {
-    top: 50%;
-    right: auto;
-    bottom: auto;
-    left: 50%;
-    width: 420px;
-    transform: translate(-50%, -50%);
-    border-radius: var(--radius-xl);
-    animation: none;
-  }
+    .sheet {
+        top: 50%;
+        right: auto;
+        bottom: auto;
+        left: 50%;
+        width: 420px;
+        transform: translate(-50%, -50%);
+        border-radius: var(--radius-xl);
+        animation: none;
+    }
 }

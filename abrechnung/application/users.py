@@ -91,11 +91,16 @@ class UserService(Service[Config]):
                 logger.info("provisioned user %s for oidc subject %s", candidate, subject)
                 return await self._get_user(conn, user_id)
             except UniqueViolationError as e:
-                if e.constraint_name == "usr_username_key":
+                # asyncpg populates constraint_name from the server error fields
+                # at runtime, but does not declare it on the exception type.
+                # getattr keeps the type checker honest without an ignore
+                # comment, and degrades to the re-raise below if it is ever absent.
+                constraint = getattr(e, "constraint_name", None)
+                if constraint == "usr_username_key":
                     # Display names are cosmetic, so a clash is worth working around
                     # rather than locking the user out.
                     continue
-                if e.constraint_name == "usr_email_key":
+                if constraint == "usr_email_key":
                     logger.error(
                         "cannot provision oidc subject %s: email %s already belongs to another account",
                         subject,

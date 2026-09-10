@@ -1,38 +1,30 @@
 <div class="page-title">
-  <h1>Profil</h1>
+    <h1>Profil</h1>
 </div>
 
 <div class="page">
-  @if (store.profile(); as user) {
+    @if (store.profile(); as user) {
     <p class="cap"><span>Konto</span></p>
     <div class="list">
-      <div class="setting">
-        <span>Benutzername</span><span>{{ user.username }}</span>
-      </div>
-      <div class="setting">
-        <span>E-Mail</span><span>{{ user.email }}</span>
-      </div>
-      <div class="setting">
-        <span>Authentik-Subject</span><span class="mono">{{ user.oidc_subject }}</span>
-      </div>
+        <div class="setting"><span>Benutzername</span><span>{{ user.username }}</span></div>
+        <div class="setting"><span>E-Mail</span><span>{{ user.email }}</span></div>
+        <div class="setting"><span>Authentik-Subject</span><span class="mono">{{ user.oidc_subject }}</span></div>
     </div>
-  }
+    }
 
-  <p class="cap"><span>App</span></p>
-  <div class="list">
-    <div class="setting">
-      <span>Anmeldung über</span><span>{{ config.get().oidc.issuer }}</span>
+    <p class="cap"><span>App</span></p>
+    <div class="list">
+        <div class="setting"><span>Anmeldung über</span><span>{{ config.get().oidc.issuer }}</span></div>
     </div>
-  </div>
 
-  <p class="cap"><span>Sitzung</span></p>
-  <div class="list">
-    <button class="setting destructive" type="button" (click)="signOut()">
-      <span>
-        Abmelden
-        <span class="hint">Token verwerfen und Authentik-Sitzung beenden</span>
-      </span>
-      <app-icon name="sign-out" />
-    </button>
-  </div>
+    <p class="cap"><span>Sitzung</span></p>
+    <div class="list">
+        <button class="setting destructive" type="button" (click)="signOut()">
+            <span>
+                Abmelden
+                <span class="hint">Token verwerfen und Authentik-Sitzung beenden</span>
+            </span>
+            <app-icon name="sign-out" />
+        </button>
+    </div>
 </div>

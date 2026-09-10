@@ -26,15 +26,15 @@ Der Handoff wurde für die **bestehende React-App** geschrieben. Er sagt an mehr
 
 **Das gilt für dich nicht.** Wir bauen Angular. Konkret:
 
-| Handoff sagt | Für dich gilt |
-|---|---|
-| „Implement in `apps/web`" | Neue Angular-App, `apps/web` bleibt unangetastet |
-| MUI-Theme erweitern | Design-Tokens als CSS Custom Properties, keine MUI |
-| RTK-Query-Hooks aus `libs/api` | Eigener, aus `/openapi.json` generierter Client |
-| i18next-Keys in `libs/translations` | Angular-i18n-Lösung deiner Wahl — die Copy aus dem Handoff übernehmen |
-| Hooks `useFormatCurrency` etc. | Äquivalente Angular-Pipes/Services; **schau dir die React-Originale an**, die Formatierungsregeln stimmen |
-| „React 18", Branch `master` | Falsch. React ist 19.2.6 (irrelevant für dich), Branch siehe oben |
-| `CLAUDE_CODE_PROMPT.md` | Komplett ignorieren, das ist der React-Kickoff |
+| Handoff sagt                        | Für dich gilt                                                                                             |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| „Implement in `apps/web`"           | Neue Angular-App, `apps/web` bleibt unangetastet                                                          |
+| MUI-Theme erweitern                 | Design-Tokens als CSS Custom Properties, keine MUI                                                        |
+| RTK-Query-Hooks aus `libs/api`      | Eigener, aus `/openapi.json` generierter Client                                                           |
+| i18next-Keys in `libs/translations` | Angular-i18n-Lösung deiner Wahl — die Copy aus dem Handoff übernehmen                                     |
+| Hooks `useFormatCurrency` etc.      | Äquivalente Angular-Pipes/Services; **schau dir die React-Originale an**, die Formatierungsregeln stimmen |
+| „React 18", Branch `master`         | Falsch. React ist 19.2.6 (irrelevant für dich), Branch siehe oben                                         |
+| `CLAUDE_CODE_PROMPT.md`             | Komplett ignorieren, das ist der React-Kickoff                                                            |
 
 **Was du dagegen wörtlich übernimmst:** Layout, Hierarchie, Densities, Copy, Interaktionen, Zustände, Navigation, Validierungsregeln, Design-Tokens, Motion — der gesamte gestalterische und fachliche Inhalt. Der ist framework-unabhängig und sehr präzise. Der Handoff nennt seinen eigenen Anspruch: **hohe Treue** bei Layout, Hierarchie, Copy und Interaktion, **mittlere** bei Pixelwerten.
 
@@ -71,7 +71,7 @@ Prüfe, welche Skills, Plugins oder MCP-Connectors hier verfügbar oder installi
 
 ## Fachliche Änderung — vor dem Bauen lesen
 
-Der Handoff entfernt die Unterscheidung zwischen *purchase* und *transfer* aus der UI. Das ist eine **Produktentscheidung, keine Kosmetik**:
+Der Handoff entfernt die Unterscheidung zwischen _purchase_ und _transfer_ aus der UI. Das ist eine **Produktentscheidung, keine Kosmetik**:
 
 - Alles ist eine **Expense**: `{ id, group, name, value, date, creditor, split_mode, shares }`.
 - `split_mode` bleibt `shares | percent | absolute` mit den bestehenden Summenregeln (percent = 100, absolute = Betrag, shares > 0).
@@ -106,9 +106,9 @@ Das Backend stellt **keine** Tokens aus. Es gibt **kein** `/login`, **kein** `/r
 
 Bewusst so gebaut, im HTTP-Interceptor korrekt behandeln:
 
-| Status | Bedeutung | UI-Reaktion |
-|---|---|---|
-| **401** | Token ungültig, abgelaufen, manipuliert | Silent Renew, sonst zum Login |
+| Status  | Bedeutung                                                      | UI-Reaktion                                                                                     |
+| ------- | -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| **401** | Token ungültig, abgelaufen, manipuliert                        | Silent Renew, sonst zum Login                                                                   |
 | **503** | **Authentik nicht erreichbar** — Token evtl. völlig in Ordnung | Token **behalten**, „vorübergehend nicht verfügbar" zeigen, Backoff-Retry. **Nicht ausloggen.** |
 
 503 als Logout zu behandeln wirft Nutzer bei jedem Authentik-Schluckauf raus. Das ist der übliche Fehler an dieser Stelle.

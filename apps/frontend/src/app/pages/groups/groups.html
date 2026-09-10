@@ -1,68 +1,59 @@
 <div class="page-title">
-  <h1>Gruppen</h1>
-  <p class="sub">{{ store.groups().length }} Gruppen</p>
+    <h1>Gruppen</h1>
+    <p class="sub">{{ store.groups().length }} Gruppen</p>
 </div>
 
 <div class="page">
-  @if (rows().length) {
+    @if (rows().length) {
     <div class="list">
-      @for (row of rows(); track row.group.id) {
+        @for (row of rows(); track row.group.id) {
         <a class="row" [routerLink]="['/groups', row.group.id]">
-          <span class="tile"><app-icon name="groups" /></span>
-          <span class="body">
-            <span class="title">{{ row.group.name }}</span>
-            <span class="sub">{{ row.members }} Mitglieder · {{ row.expenses }} Ausgaben</span>
-          </span>
-          <span class="trail">
-            <span class="badge" [class]="row.tone">
-              <app-amount
-                [value]="row.balance"
-                [currency]="row.group.currency_identifier"
-                [absolute]="true"
-              />
+            <span class="tile"><app-icon name="groups" /></span>
+            <span class="body">
+                <span class="title">{{ row.group.name }}</span>
+                <span class="sub">{{ row.members }} Mitglieder · {{ row.expenses }} Ausgaben</span>
             </span>
-            <span class="note">{{ row.note }}</span>
-          </span>
+            <span class="trail">
+                <span class="badge" [class]="row.tone">
+                    <app-amount [value]="row.balance" [currency]="row.group.currency_identifier" [absolute]="true" />
+                </span>
+                <span class="note">{{ row.note }}</span>
+            </span>
         </a>
-      }
+        }
     </div>
-  } @else {
+    } @else {
     <div class="empty">
-      <app-icon name="groups" [size]="32" />
-      <strong>Noch keine Gruppe</strong>
-      <span>Leg eine an, um Ausgaben zu teilen.</span>
+        <app-icon name="groups" [size]="32" />
+        <strong>Noch keine Gruppe</strong>
+        <span>Leg eine an, um Ausgaben zu teilen.</span>
     </div>
-  }
+    }
 </div>
 
 <button class="fab" type="button" (click)="open()" aria-label="Gruppe anlegen">
-  <app-icon name="plus" [size]="22" />
+    <app-icon name="plus" [size]="22" />
 </button>
 
 @if (sheetOpen()) {
-  <div class="scrim" (click)="sheetOpen.set(false)"></div>
-  <div class="sheet" role="dialog" aria-label="Gruppe anlegen">
+<div class="scrim" (click)="sheetOpen.set(false)"></div>
+<div class="sheet" role="dialog" aria-label="Gruppe anlegen">
     <h2>Gruppe anlegen</h2>
     <label for="group-name">Name</label>
     <input
-      id="group-name"
-      type="text"
-      [ngModel]="newName()"
-      (ngModelChange)="newName.set($event)"
-      placeholder="z. B. WG Sonnenweg"
-      autocomplete="off"
+        id="group-name"
+        type="text"
+        [ngModel]="newName()"
+        (ngModelChange)="newName.set($event)"
+        placeholder="z. B. WG Sonnenweg"
+        autocomplete="off"
     />
     <p class="hint">Wird allen Mitgliedern angezeigt.</p>
     <div class="actions">
-      <button type="button" class="ghost" (click)="sheetOpen.set(false)">Abbrechen</button>
-      <button
-        type="button"
-        class="primary"
-        [disabled]="!newName().trim() || saving()"
-        (click)="create()"
-      >
-        Anlegen
-      </button>
+        <button type="button" class="ghost" (click)="sheetOpen.set(false)">Abbrechen</button>
+        <button type="button" class="primary" [disabled]="!newName().trim() || saving()" (click)="create()">
+            Anlegen
+        </button>
     </div>
-  </div>
+</div>
 }

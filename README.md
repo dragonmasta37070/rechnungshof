@@ -78,12 +78,12 @@ redeploy the stack. Komodo only pulls.
 
 Create an **OAuth2/OpenID provider**:
 
-| Setting | Value |
-|---------|-------|
-| Client type | **Public** — a browser app cannot keep a secret, which is what PKCE is for |
-| Redirect URI | `https://rechnungshof.moretta.at/auth/callback` |
-| Signing Key | **pick a certificate** — without one Authentik issues opaque tokens instead of JWTs and nothing validates |
-| Scopes | `openid`, `profile`, `email` — provisioning refuses a token with no email claim |
+| Setting      | Value                                                                                                     |
+| ------------ | --------------------------------------------------------------------------------------------------------- |
+| Client type  | **Public** — a browser app cannot keep a secret, which is what PKCE is for                                |
+| Redirect URI | `https://rechnungshof.moretta.at/auth/callback`                                                           |
+| Signing Key  | **pick a certificate** — without one Authentik issues opaque tokens instead of JWTs and nothing validates |
+| Scopes       | `openid`, `profile`, `email` — provisioning refuses a token with no email claim                           |
 
 Then read the real values off the discovery document rather than assembling them
 by hand — the issuer must match the token's `iss` claim character for character,
@@ -101,11 +101,11 @@ Bind a user or group to the application, or nobody gets in.
 The deploy workflow needs three repository secrets so it can tell Komodo to
 redeploy — `GITHUB_TOKEN` is provided automatically and covers the GHCR push:
 
-| Secret | Value |
-|--------|-------|
-| `KOMODO_URL` | your Komodo instance, e.g. `https://komodo.moretta.at` |
-| `KOMODO_API_KEY` | Komodo → Settings → API Keys |
-| `KOMODO_API_SECRET` | the secret shown when the key is created |
+| Secret              | Value                                                  |
+| ------------------- | ------------------------------------------------------ |
+| `KOMODO_URL`        | your Komodo instance, e.g. `https://komodo.moretta.at` |
+| `KOMODO_API_KEY`    | Komodo → Settings → API Keys                           |
+| `KOMODO_API_SECRET` | the secret shown when the key is created               |
 
 The stack in Komodo must be named **`rechnungshof`** — the workflow addresses it
 by name.
@@ -118,12 +118,12 @@ secret.
 
 Create a **Stack** resource pointing at this repository:
 
-| Field | Value |
-|-------|-------|
-| Source | Git Repo |
-| Repo | `dragonmasta37070/rechnungshof` |
-| Branch | `phase1-fork-setup` |
-| File path | `docker-compose.komodo.yaml` |
+| Field     | Value                           |
+| --------- | ------------------------------- |
+| Source    | Git Repo                        |
+| Repo      | `dragonmasta37070/rechnungshof` |
+| Branch    | `phase1-fork-setup`             |
+| File path | `docker-compose.komodo.yaml`    |
 
 No access token is needed while the repository is public. The compose file only
 references images — nothing is built on the server.
@@ -201,14 +201,14 @@ To help you set up your instance or understand the inner workings:
 
 ## Technical foundation
 
-| Technology            | Component                                            |
-| --------------------- | ---------------------------------------------------- |
-| **PostgresSQL**       | Database                                             |
-| **Python + FastAPI**  | Backend logic — a pure OIDC resource server           |
-| **Authentik**         | Identity provider, the only way in                   |
-| **Angular**           | Web UI (`apps/frontend`), mobile-first, installable  |
+| Technology              | Component                                             |
+| ----------------------- | ----------------------------------------------------- |
+| **PostgresSQL**         | Database                                              |
+| **Python + FastAPI**    | Backend logic — a pure OIDC resource server           |
+| **Authentik**           | Identity provider, the only way in                    |
+| **Angular**             | Web UI (`apps/frontend`), mobile-first, installable   |
 | **React + Material UI** | Upstream's UI (`apps/web`), superseded, still present |
-| **Homo Sapiens**      | Magic sauce                                          |
+| **Homo Sapiens**        | Magic sauce                                           |
 
 ## Contributing
 
@@ -230,12 +230,12 @@ Translations are managed using the hosted weblate service [here](https://hosted.
 To directly reach developers and other users, we have chat rooms.
 For questions, suggestions, problem support, please join and just ask!
 
-| Contact       | Where?                                                                                          |
-| ------------- | ----------------------------------------------------------------------------------------------- |
-| Upstream Issues | [SFTtech/abrechnung](https://github.com/SFTtech/abrechnung/issues)                            |
-| Fork Issues   | [dragonmasta37070/rechnungshof](https://github.com/dragonmasta37070/rechnungshof/issues)        |
-| Matrix Chat   | [`#sfttech:matrix.org`](https://app.element.io/#/room/#sfttech:matrix.org)                      |
-| Support us    | [![money sink](https://liberapay.com/assets/widgets/donate.svg)](https://liberapay.com/SFTtech) |
+| Contact         | Where?                                                                                          |
+| --------------- | ----------------------------------------------------------------------------------------------- |
+| Upstream Issues | [SFTtech/abrechnung](https://github.com/SFTtech/abrechnung/issues)                              |
+| Fork Issues     | [dragonmasta37070/rechnungshof](https://github.com/dragonmasta37070/rechnungshof/issues)        |
+| Matrix Chat     | [`#sfttech:matrix.org`](https://app.element.io/#/room/#sfttech:matrix.org)                      |
+| Support us      | [![money sink](https://liberapay.com/assets/widgets/donate.svg)](https://liberapay.com/SFTtech) |
 
 ## License
 

@@ -1,44 +1,44 @@
 .setting {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
-  width: 100%;
-  min-height: 56px;
-  padding: var(--row-padding-y) var(--space-4);
-  border: 0;
-  background: none;
-  color: var(--text-2);
-  font: inherit;
-  font-size: 14px;
-  text-align: left;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    width: 100%;
+    min-height: 56px;
+    padding: var(--row-padding-y) var(--space-4);
+    border: 0;
+    background: none;
+    color: var(--text-2);
+    font: inherit;
+    font-size: 14px;
+    text-align: left;
 }
 
 .setting > span:last-child {
-  overflow: hidden;
-  color: var(--text);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+    overflow: hidden;
+    color: var(--text);
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .setting .mono {
-  font-family: ui-monospace, monospace;
-  font-size: 12px;
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
 }
 
 .setting.destructive {
-  color: var(--color-error);
-  cursor: pointer;
+    color: var(--color-error);
+    cursor: pointer;
 }
 
 .setting.destructive > span:first-child {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  color: var(--color-error);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    color: var(--color-error);
 }
 
 .setting .hint {
-  color: var(--text-3);
-  font-size: 11px;
+    color: var(--text-3);
+    font-size: 11px;
 }

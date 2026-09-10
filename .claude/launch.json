@@ -1,11 +1,11 @@
 {
-  "version": "0.0.1",
-  "configurations": [
-    {
-      "name": "rechnungshof-frontend",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "frontend", "exec", "ng", "serve", "--port", "9942"],
-      "port": 9942
-    }
-  ]
+    "version": "0.0.1",
+    "configurations": [
+        {
+            "name": "rechnungshof-frontend",
+            "runtimeExecutable": "pnpm",
+            "runtimeArgs": ["--filter", "frontend", "exec", "ng", "serve", "--port", "9942"],
+            "port": 9942
+        }
+    ]
 }

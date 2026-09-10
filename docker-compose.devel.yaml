@@ -11,7 +11,7 @@ services:
             service: api
         env_file: .env
         ports:
-            - "9980:8080"   # 99XX-Schema, haelt Abstand zu den anderen lokalen Stacks
+            - "9980:8080" # 99XX-Schema, haelt Abstand zu den anderen lokalen Stacks
         environment:
             ABRECHNUNG_DATABASE__HOST: postgres
         depends_on:
@@ -55,11 +55,10 @@ services:
         container_name: rechnungshof_postgres
         image: docker.io/postgres:14-alpine
         ports:
-            - "9932:5432"   # so the test suite can reach it from the host
+            - "9932:5432" # so the test suite can reach it from the host
         env_file: .env
         healthcheck:
             test: ["CMD", "/usr/local/bin/pg_isready"]
             start_period: 10s
         volumes:
             - "./data/pg:/var/lib/postgresql/data"
-

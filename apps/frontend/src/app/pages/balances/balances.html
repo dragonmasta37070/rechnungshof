@@ -1,73 +1,66 @@
 <div class="page-title">
-  <h1>Salden</h1>
-  <p class="sub">Über alle Gruppen summiert</p>
+    <h1>Salden</h1>
+    <p class="sub">Über alle Gruppen summiert</p>
 </div>
 
 <div class="page">
-  @if (byGroup().length || byPerson().length) {
+    @if (byGroup().length || byPerson().length) {
     <div class="card hero">
-      <p class="hero-label">{{ heroLabel() }}</p>
-      <p class="hero-value"><app-amount [value]="hero().net" [absolute]="true" /></p>
-      <div class="hero-stats">
-        <div>
-          <p class="label">Du bekommst zurück</p>
-          <p class="value"><app-amount [value]="hero().owed" [absolute]="true" /></p>
+        <p class="hero-label">{{ heroLabel() }}</p>
+        <p class="hero-value"><app-amount [value]="hero().net" [absolute]="true" /></p>
+        <div class="hero-stats">
+            <div>
+                <p class="label">Du bekommst zurück</p>
+                <p class="value"><app-amount [value]="hero().owed" [absolute]="true" /></p>
+            </div>
+            <div>
+                <p class="label">Du schuldest</p>
+                <p class="value"><app-amount [value]="hero().owing" [absolute]="true" /></p>
+            </div>
         </div>
-        <div>
-          <p class="label">Du schuldest</p>
-          <p class="value"><app-amount [value]="hero().owing" [absolute]="true" /></p>
-        </div>
-      </div>
     </div>
 
     @if (byGroup().length) {
-      <p class="cap"><span>Nach Gruppe</span></p>
-      <div class="list">
+    <p class="cap"><span>Nach Gruppe</span></p>
+    <div class="list">
         @for (row of byGroup(); track row.group.id) {
-          <button class="row" type="button" (click)="openGroup(row.group.id)">
+        <button class="row" type="button" (click)="openGroup(row.group.id)">
             <span class="tile"><app-icon name="groups" /></span>
             <span class="body">
-              <span class="title">{{ row.group.name }}</span>
-              <span class="sub">{{ row.note }}</span>
+                <span class="title">{{ row.group.name }}</span>
+                <span class="sub">{{ row.note }}</span>
             </span>
             <span class="trail">
-              <span class="badge" [class]="row.tone">
-                <app-amount
-                  [value]="row.balance"
-                  [currency]="row.group.currency_identifier"
-                  [absolute]="true"
-                />
-              </span>
+                <span class="badge" [class]="row.tone">
+                    <app-amount [value]="row.balance" [currency]="row.group.currency_identifier" [absolute]="true" />
+                </span>
             </span>
-          </button>
+        </button>
         }
-      </div>
-    }
-
-    @if (byPerson().length) {
-      <p class="cap"><span>Nach Person</span></p>
-      <div class="list">
+    </div>
+    } @if (byPerson().length) {
+    <p class="cap"><span>Nach Person</span></p>
+    <div class="list">
         @for (row of byPerson(); track row.accountName) {
-          <div class="row static">
+        <div class="row static">
             <span class="avatar">{{ row.accountName.charAt(0) }}</span>
             <span class="body">
-              <span class="title">{{ row.accountName }}</span>
-              <span class="sub">{{ row.note }}</span>
+                <span class="title">{{ row.accountName }}</span>
+                <span class="sub">{{ row.note }}</span>
             </span>
             <span class="trail">
-              <span class="badge" [class]="row.tone">
-                <app-amount [value]="row.display" [absolute]="true" />
-              </span>
+                <span class="badge" [class]="row.tone">
+                    <app-amount [value]="row.display" [absolute]="true" />
+                </span>
             </span>
-          </div>
+        </div>
         }
-      </div>
-    }
-  } @else {
-    <div class="empty">
-      <app-icon name="check-circle" [size]="32" />
-      <strong>Alles ausgeglichen</strong>
-      <span>Niemand schuldet dir etwas in deinen Gruppen.</span>
     </div>
-  }
+    } } @else {
+    <div class="empty">
+        <app-icon name="check-circle" [size]="32" />
+        <strong>Alles ausgeglichen</strong>
+        <span>Niemand schuldet dir etwas in deinen Gruppen.</span>
+    </div>
+    }
 </div>

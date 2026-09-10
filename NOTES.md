@@ -10,11 +10,11 @@ Upstream remote is configured as `upstream`; pull changes with `git fetch upstre
 
 ## The three compose files
 
-| File | Purpose |
-|------|---------|
-| `docker-compose.base.yaml` | Shared fragment only (`command`, `env_file`, healthcheck) for the three Python services `api`, `mailer`, `cron`. No `image:`/`build:` — **not runnable on its own**. |
-| `docker-compose.devel.yaml` | Local development. Builds from the working tree and adds the full supporting cast: Postgres, Mailhog, nginx, hot-reloading frontend. |
-| `docker-compose.prod.yaml` | Pulls prebuilt `quay.io/abrechnung/*:latest-release` images. **No** database, **no** mail catcher, **no** nginx, **no** published ports — you supply DB and reverse proxy. This is the Komodo/Traefik template. |
+| File                        | Purpose                                                                                                                                                                                                         |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `docker-compose.base.yaml`  | Shared fragment only (`command`, `env_file`, healthcheck) for the three Python services `api`, `mailer`, `cron`. No `image:`/`build:` — **not runnable on its own**.                                            |
+| `docker-compose.devel.yaml` | Local development. Builds from the working tree and adds the full supporting cast: Postgres, Mailhog, nginx, hot-reloading frontend.                                                                            |
+| `docker-compose.prod.yaml`  | Pulls prebuilt `quay.io/abrechnung/*:latest-release` images. **No** database, **no** mail catcher, **no** nginx, **no** published ports — you supply DB and reverse proxy. This is the Komodo/Traefik template. |
 
 ## Local development
 
@@ -37,11 +37,11 @@ Needed for `ABRECHNUNG_DATABASE__PASSWORD` (must equal `POSTGRES_PASSWORD`) and
 
 ### Ports
 
-| Port | Service | Notes |
-|------|---------|-------|
-| **9990** | `nginx` | proxies `/api` to the backend and everything else to the frontend. Not started, see "Known breakage". |
-| **9980** | `api` | published directly. Phase 2 is verified with curl, and the future Angular SPA talks to the API rather than through nginx. |
-| **9932** | `postgres` | published so the test suite can reach it from the host |
+| Port     | Service    | Notes                                                                                                                     |
+| -------- | ---------- | ------------------------------------------------------------------------------------------------------------------------- |
+| **9990** | `nginx`    | proxies `/api` to the backend and everything else to the frontend. Not started, see "Known breakage".                     |
+| **9980** | `api`      | published directly. Phase 2 is verified with curl, and the future Angular SPA talks to the API rather than through nginx. |
+| **9932** | `postgres` | published so the test suite can reach it from the host                                                                    |
 
 API docs once running: <http://localhost:9980/docs> — the OpenAPI document is at
 `/openapi.json`, while the routes themselves live under `/api/v1/...`. nginx is what adds
@@ -76,15 +76,15 @@ this deployment is an API, with `/docs` as the human-facing entry point.
 
 Everything is parameterised; set these in Komodo's environment section:
 
-| Variable | Example |
-|---|---|
-| `RECHNUNGSHOF_DOMAIN` | `rechnungshof.moretta.at` |
-| `TRAEFIK_NETWORK` | the external network Traefik already uses |
-| `TRAEFIK_ENTRYPOINT` | `websecure` |
-| `TRAEFIK_CERTRESOLVER` | whatever your Traefik calls it |
-| `POSTGRES_USER` / `POSTGRES_DB` | `abrechnung` |
-| `POSTGRES_PASSWORD` | generate, 64 chars |
-| `ABRECHNUNG_API__SECRET_KEY` | generate, 64 chars |
+| Variable                                                | Example                                     |
+| ------------------------------------------------------- | ------------------------------------------- |
+| `RECHNUNGSHOF_DOMAIN`                                   | `rechnungshof.moretta.at`                   |
+| `TRAEFIK_NETWORK`                                       | the external network Traefik already uses   |
+| `TRAEFIK_ENTRYPOINT`                                    | `websecure`                                 |
+| `TRAEFIK_CERTRESOLVER`                                  | whatever your Traefik calls it              |
+| `POSTGRES_USER` / `POSTGRES_DB`                         | `abrechnung`                                |
+| `POSTGRES_PASSWORD`                                     | generate, 64 chars                          |
+| `ABRECHNUNG_API__SECRET_KEY`                            | generate, 64 chars                          |
 | `ABRECHNUNG_OIDC__ISSUER` / `__AUDIENCE` / `__JWKS_URL` | read off Authentik's `.well-known` document |
 
 If you would rather run against an existing database, drop the `postgres` service and point
@@ -153,18 +153,18 @@ Not relevant to Phase 2 — the React frontend is being replaced by an Angular a
 
 Verified end to end over the API on 2026-08-20, without the React frontend:
 
-| Step | Result |
-|------|--------|
-| `POST /api/v1/auth/register` | `{"user_id": 1}` |
-| Confirmation mail via Mailhog | delivered, token extracted |
-| `POST /api/v1/auth/confirm_registration` | 204 |
-| `POST /api/v1/auth/login` | `access_token` issued |
-| `GET /api/v1/profile` with token | 200, correct user |
-| `POST /api/v1/groups` | group id 1 |
-| `POST /api/v1/groups/1/accounts` | second account created |
-| `POST /api/v1/groups/1/transactions` | expense 48.60 EUR, split over two accounts |
-| same request **without** token | **401** |
-| Database | `users=1 groups=1 transactions=1` |
+| Step                                     | Result                                     |
+| ---------------------------------------- | ------------------------------------------ |
+| `POST /api/v1/auth/register`             | `{"user_id": 1}`                           |
+| Confirmation mail via Mailhog            | delivered, token extracted                 |
+| `POST /api/v1/auth/confirm_registration` | 204                                        |
+| `POST /api/v1/auth/login`                | `access_token` issued                      |
+| `GET /api/v1/profile` with token         | 200, correct user                          |
+| `POST /api/v1/groups`                    | group id 1                                 |
+| `POST /api/v1/groups/1/accounts`         | second account created                     |
+| `POST /api/v1/groups/1/transactions`     | expense 48.60 EUR, split over two accounts |
+| same request **without** token           | **401**                                    |
+| Database                                 | `users=1 groups=1 transactions=1`          |
 
 **Test user `phase1tester` (user_id 1)** exists with a password hash. It is a throwaway from
 this smoke test; Phase 2 decides whether to delete it or link it to an `oidc_subject`.
@@ -208,11 +208,11 @@ refuses a token without an email claim.
 
 Then set three variables:
 
-| Variable | Where it comes from |
-|----------|--------------------|
-| `ABRECHNUNG_OIDC__ISSUER` | Authentik provider → "OpenID Configuration Issuer". Must match the `iss` claim character for character, trailing slash included. |
-| `ABRECHNUNG_OIDC__AUDIENCE` | the provider's Client ID |
-| `ABRECHNUNG_OIDC__JWKS_URL` | `https://<authentik>/application/o/<slug>/jwks/` |
+| Variable                    | Where it comes from                                                                                                              |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `ABRECHNUNG_OIDC__ISSUER`   | Authentik provider → "OpenID Configuration Issuer". Must match the `iss` claim character for character, trailing slash included. |
+| `ABRECHNUNG_OIDC__AUDIENCE` | the provider's Client ID                                                                                                         |
+| `ABRECHNUNG_OIDC__JWKS_URL` | `https://<authentik>/application/o/<slug>/jwks/`                                                                                 |
 
 The backend must be able to reach `JWKS_URL`. Either put both containers on one Docker
 network and use the internal name, or go out over the public Traefik domain. If it cannot

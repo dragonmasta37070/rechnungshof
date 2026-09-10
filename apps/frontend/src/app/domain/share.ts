@@ -1,6 +1,6 @@
-import type { Transaction } from '../api/api';
-import { toDomainTransaction } from './adapt';
-import { computeTransactionBalanceEffect } from '@abrechnung/core';
+import type { Transaction } from "../api/api";
+import { toDomainTransaction } from "./adapt";
+import { computeTransactionBalanceEffect } from "@abrechnung/core";
 
 /**
  * What one account's slice of a single expense costs them.
@@ -14,11 +14,11 @@ import { computeTransactionBalanceEffect } from '@abrechnung/core';
  * Returns null when the account has no part in the expense.
  */
 export function shareOf(transaction: Transaction, accountId: number): number | null {
-  const effect = computeTransactionBalanceEffect(toDomainTransaction(transaction));
-  const entry = effect[accountId];
-  if (!entry) {
-    return null;
-  }
-  const share = entry.positions + entry.commonDebitors;
-  return share === 0 ? null : share;
+    const effect = computeTransactionBalanceEffect(toDomainTransaction(transaction));
+    const entry = effect[accountId];
+    if (!entry) {
+        return null;
+    }
+    const share = entry.positions + entry.commonDebitors;
+    return share === 0 ? null : share;
 }

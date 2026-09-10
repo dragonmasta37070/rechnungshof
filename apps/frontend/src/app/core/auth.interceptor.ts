@@ -1,14 +1,14 @@
-import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
-import { inject } from '@angular/core';
-import { Router } from '@angular/router';
-import { catchError, switchMap, tap, throwError } from 'rxjs';
+import { HttpErrorResponse, HttpInterceptorFn } from "@angular/common/http";
+import { inject } from "@angular/core";
+import { Router } from "@angular/router";
+import { catchError, switchMap, tap, throwError } from "rxjs";
 
-import { ProviderStatusService } from './provider-status';
-import { rememberReturnUrl } from './return-url';
-import { OidcSecurityService } from 'angular-auth-oidc-client';
+import { ProviderStatusService } from "./provider-status";
+import { rememberReturnUrl } from "./return-url";
+import { OidcSecurityService } from "angular-auth-oidc-client";
 
 /** Backend paths that are served without authentication. */
-const UNAUTHENTICATED = ['/api/config', '/api/version'];
+const UNAUTHENTICATED = new Set(["/api/config", "/api/version"]);
 
 /**
  * Whether this request may carry our access token.
@@ -26,20 +26,20 @@ const UNAUTHENTICATED = ['/api/config', '/api/version'];
  * `/api/configuration` from being mistaken for the public `/api/config`.
  */
 function mayCarryToken(rawUrl: string): boolean {
-  let url: URL;
-  try {
-    url = new URL(rawUrl, window.location.origin);
-  } catch {
-    return false;
-  }
+    let url: URL;
+    try {
+        url = new URL(rawUrl, window.location.origin);
+    } catch {
+        return false;
+    }
 
-  if (url.origin !== window.location.origin) {
-    return false;
-  }
-  if (!url.pathname.startsWith('/api/')) {
-    return false;
-  }
-  return !UNAUTHENTICATED.includes(url.pathname);
+    if (url.origin !== window.location.origin) {
+        return false;
+    }
+    if (!url.pathname.startsWith("/api/")) {
+        return false;
+    }
+    return !UNAUTHENTICATED.has(url.pathname);
 }
 
 /**
@@ -52,48 +52,48 @@ function mayCarryToken(rawUrl: string): boolean {
  * as a wave of bad credentials.
  */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  const oidc = inject(OidcSecurityService);
-  const providerStatus = inject(ProviderStatusService);
-  const router = inject(Router);
+    const oidc = inject(OidcSecurityService);
+    const providerStatus = inject(ProviderStatusService);
+    const router = inject(Router);
 
-  if (!mayCarryToken(req.url)) {
-    return next(req);
-  }
+    if (!mayCarryToken(req.url)) {
+        return next(req);
+    }
 
-  return oidc.getAccessToken().pipe(
-    switchMap((token) => {
-      const authed = token ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } }) : req;
+    return oidc.getAccessToken().pipe(
+        switchMap((token) => {
+            const authed = token ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } }) : req;
 
-      return next(authed).pipe(
-        // A successful call proves the provider is reachable again, so the
-        // outage banner clears on the next good response rather than needing a
-        // poll or a reload.
-        tap(() => providerStatus.reportReachable()),
-        catchError((error: unknown) => {
-          if (error instanceof HttpErrorResponse) {
-            if (error.status === 503) {
-              // Keep the token. The identity provider is down, not the session.
-              providerStatus.reportUnavailable();
-            } else if (error.status === 401) {
-              providerStatus.reportReachable();
-              // Send the user to the login screen — never straight into
-              // `authorize()`. A backend that answers 401 for a structurally
-              // valid token (unprovisioned user, missing email claim, clock
-              // skew) would otherwise loop: authorize -> Authentik's session
-              // cookie is still good -> silent consent -> back here -> 401.
-              // Concurrent 401s would also each start their own authorization
-              // with its own code verifier and race each other's state.
-              if (!router.url.startsWith('/login')) {
-                rememberReturnUrl(router.url);
-                void router.navigate(['/login']);
-              }
-            } else {
-              providerStatus.reportReachable();
-            }
-          }
-          return throwError(() => error);
-        }),
-      );
-    }),
-  );
+            return next(authed).pipe(
+                // A successful call proves the provider is reachable again, so the
+                // outage banner clears on the next good response rather than needing a
+                // poll or a reload.
+                tap(() => providerStatus.reportReachable()),
+                catchError((error: unknown) => {
+                    if (error instanceof HttpErrorResponse) {
+                        if (error.status === 503) {
+                            // Keep the token. The identity provider is down, not the session.
+                            providerStatus.reportUnavailable();
+                        } else if (error.status === 401) {
+                            providerStatus.reportReachable();
+                            // Send the user to the login screen — never straight into
+                            // `authorize()`. A backend that answers 401 for a structurally
+                            // valid token (unprovisioned user, missing email claim, clock
+                            // skew) would otherwise loop: authorize -> Authentik's session
+                            // cookie is still good -> silent consent -> back here -> 401.
+                            // Concurrent 401s would also each start their own authorization
+                            // with its own code verifier and race each other's state.
+                            if (!router.url.startsWith("/login")) {
+                                rememberReturnUrl(router.url);
+                                void router.navigate(["/login"]);
+                            }
+                        } else {
+                            providerStatus.reportReachable();
+                        }
+                    }
+                    return throwError(() => error);
+                })
+            );
+        })
+    );
 };

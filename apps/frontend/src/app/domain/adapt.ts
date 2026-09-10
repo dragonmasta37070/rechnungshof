@@ -1,6 +1,6 @@
-import type { Account as DomainAccount, Transaction as DomainTransaction } from '@abrechnung/types';
+import type { Account as DomainAccount, Transaction as DomainTransaction } from "@abrechnung/types";
 
-import type { ClearingAccount, PersonalAccount, Transaction } from '../api/api';
+import type { ClearingAccount, PersonalAccount, Transaction } from "../api/api";
 
 /**
  * Adapters between the API's wire shape and the shape `@abrechnung/core` expects.
@@ -14,34 +14,34 @@ import type { ClearingAccount, PersonalAccount, Transaction } from '../api/api';
  */
 
 export function toDomainAccount(account: PersonalAccount | ClearingAccount): DomainAccount {
-  // is_wip marks a locally edited, unsaved entity in the React app's editor.
-  // Nothing here is ever mid-edit, so it is always false.
-  return { ...account, is_wip: false } as DomainAccount;
+    // is_wip marks a locally edited, unsaved entity in the React app's editor.
+    // Nothing here is ever mid-edit, so it is always false.
+    return { ...account, is_wip: false } as DomainAccount;
 }
 
 export function toDomainTransaction(transaction: Transaction): DomainTransaction {
-  const positions: Record<number, unknown> = {};
-  const positionIds: number[] = [];
+    const positions: Record<number, unknown> = {};
+    const positionIds: number[] = [];
 
-  for (const position of transaction.positions ?? []) {
-    positions[position.id] = { ...position, is_changed: false, only_local: false };
-    positionIds.push(position.id);
-  }
+    for (const position of transaction.positions ?? []) {
+        positions[position.id] = { ...position, is_changed: false, only_local: false };
+        positionIds.push(position.id);
+    }
 
-  return {
-    ...transaction,
-    is_wip: false,
-    positions,
-    position_ids: positionIds,
-    files: {},
-    file_ids: [],
-  } as unknown as DomainTransaction;
+    return {
+        ...transaction,
+        is_wip: false,
+        positions,
+        position_ids: positionIds,
+        files: {},
+        file_ids: [],
+    } as unknown as DomainTransaction;
 }
 
 export function toDomainAccounts(accounts: (PersonalAccount | ClearingAccount)[]): DomainAccount[] {
-  return accounts.map(toDomainAccount);
+    return accounts.map(toDomainAccount);
 }
 
 export function toDomainTransactions(transactions: Transaction[]): DomainTransaction[] {
-  return transactions.map(toDomainTransaction);
+    return transactions.map(toDomainTransaction);
 }

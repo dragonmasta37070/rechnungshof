@@ -1,20 +1,19 @@
-import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { Component } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
-import { OidcSecurityService } from 'angular-auth-oidc-client';
-import { of } from 'rxjs';
+import { provideHttpClient } from "@angular/common/http";
+import { provideHttpClientTesting } from "@angular/common/http/testing";
+import { ComponentFixture, TestBed } from "@angular/core/testing";
+import { provideRouter } from "@angular/router";
+import { OidcSecurityService } from "angular-auth-oidc-client";
+import { of } from "rxjs";
 
-import type { Group, PersonalAccount, Transaction, User } from '../api/api';
-import { AppConfigService } from '../core/app-config';
-import { Store } from '../domain/store';
-import { Balances } from './balances/balances';
-import { Editor } from './editor/editor';
-import { Expenses } from './expenses/expenses';
-import { GroupView } from './group/group';
-import { Groups } from './groups/groups';
-import { Profile } from './profile/profile';
+import type { Group, PersonalAccount, Transaction, User } from "../api/api";
+import { AppConfigService } from "../core/app-config";
+import { Store } from "../domain/store";
+import { Balances } from "./balances/balances";
+import { Editor } from "./editor/editor";
+import { Expenses } from "./expenses/expenses";
+import { GroupView } from "./group/group";
+import { Groups } from "./groups/groups";
+import { Profile } from "./profile/profile";
 
 /**
  * Smoke tests: every screen must render with realistic data.
@@ -27,199 +26,193 @@ import { Profile } from './profile/profile';
  */
 
 const USER: User = {
-  id: 1,
-  username: 'marco',
-  email: 'marco@example.org',
-  registered_at: '2026-01-01T00:00:00Z',
-  deleted: false,
-  pending: false,
-  is_guest_user: false,
-  oidc_subject: 'ak-abc',
+    id: 1,
+    username: "marco",
+    email: "marco@example.org",
+    registered_at: "2026-01-01T00:00:00Z",
+    deleted: false,
+    pending: false,
+    is_guest_user: false,
+    oidc_subject: "ak-abc",
 };
 
 function account(id: number, name: string): PersonalAccount {
-  return {
-    id,
-    group_id: 1,
-    type: 'personal',
-    name,
-    description: '',
-    deleted: false,
-    last_changed: '2026-01-01T00:00:00Z',
-  };
+    return {
+        id,
+        group_id: 1,
+        type: "personal",
+        name,
+        description: "",
+        deleted: false,
+        last_changed: "2026-01-01T00:00:00Z",
+    };
 }
 
 function group(id: number, name: string, ownAccountId: number | null): Group {
-  return {
-    id,
-    name,
-    description: '',
-    currency_identifier: 'EUR',
-    terms: '',
-    add_user_account_on_join: true,
-    created_at: '2026-01-01T00:00:00Z',
-    created_by: 1,
-    last_changed: '2026-01-01T00:00:00Z',
-    archived: false,
-    is_owner: true,
-    can_write: true,
-    owned_account_id: ownAccountId,
-  };
+    return {
+        id,
+        name,
+        description: "",
+        currency_identifier: "EUR",
+        terms: "",
+        add_user_account_on_join: true,
+        created_at: "2026-01-01T00:00:00Z",
+        created_by: 1,
+        last_changed: "2026-01-01T00:00:00Z",
+        archived: false,
+        is_owner: true,
+        can_write: true,
+        owned_account_id: ownAccountId,
+    };
 }
 
 function expense(id: number, value: number, creditor: number, debitors: number[]): Transaction {
-  return {
-    id,
-    group_id: 1,
-    type: 'purchase',
-    name: `Ausgabe ${id}`,
-    description: '',
-    value,
-    currency_identifier: 'EUR',
-    currency_conversion_rate: 1,
-    billed_at: '2026-08-20',
-    tags: [],
-    deleted: false,
-    creditor_shares: { [creditor]: 1 },
-    debitor_shares: Object.fromEntries(debitors.map((d) => [d, 1])),
-    split_mode: 'shares',
-    last_changed: '2026-08-20T00:00:00Z',
-    positions: [],
-    files: [],
-  } as Transaction;
+    return {
+        id,
+        group_id: 1,
+        type: "purchase",
+        name: `Ausgabe ${id}`,
+        description: "",
+        value,
+        currency_identifier: "EUR",
+        currency_conversion_rate: 1,
+        billed_at: "2026-08-20",
+        tags: [],
+        deleted: false,
+        creditor_shares: { [creditor]: 1 },
+        debitor_shares: Object.fromEntries(debitors.map((d) => [d, 1])),
+        split_mode: "shares",
+        last_changed: "2026-08-20T00:00:00Z",
+        positions: [],
+        files: [],
+    } as Transaction;
 }
 
-const ME = account(1, 'Marco');
-const BOB = account(2, 'Bob');
-const GROUP = group(1, 'WG Sonnenweg', ME.id);
+const ME = account(1, "Marco");
+const BOB = account(2, "Bob");
+const GROUP = group(1, "WG Sonnenweg", ME.id);
 
 function configureStore(store: Store): void {
-  store.profile.set(USER);
-  store.groups.set([GROUP]);
-  store.data.set({
-    1: { accounts: [ME, BOB], transactions: [expense(10, 60, ME.id, [ME.id, BOB.id])] },
-  });
-  store.activeGroupId.set(1);
+    store.profile.set(USER);
+    store.groups.set([GROUP]);
+    store.data.set({
+        1: { accounts: [ME, BOB], transactions: [expense(10, 60, ME.id, [ME.id, BOB.id])] },
+    });
+    store.activeGroupId.set(1);
 }
 
-/** Host that supplies the routed inputs the screen would get from the router. */
-@Component({ template: '' })
-class Host {}
-
 async function setup<T>(component: unknown, inputs: Record<string, unknown> = {}) {
-  await TestBed.configureTestingModule({
-    providers: [
-      provideRouter([]),
-      provideHttpClient(),
-      provideHttpClientTesting(),
-      {
-        provide: OidcSecurityService,
-        useValue: { logoff: () => of(null), isAuthenticated$: of({ isAuthenticated: true }) },
-      },
-      {
-        provide: AppConfigService,
-        useValue: {
-          get: () => ({
-            messages: null,
-            imprint_url: null,
-            source_code_url: '',
-            issue_tracker_url: '',
-            oidc: { issuer: 'https://auth.example.org/', client_id: 'x' },
-          }),
-        },
-      },
-    ],
-  }).compileComponents();
+    await TestBed.configureTestingModule({
+        providers: [
+            provideRouter([]),
+            provideHttpClient(),
+            provideHttpClientTesting(),
+            {
+                provide: OidcSecurityService,
+                useValue: { logoff: () => of(null), isAuthenticated$: of({ isAuthenticated: true }) },
+            },
+            {
+                provide: AppConfigService,
+                useValue: {
+                    get: () => ({
+                        messages: null,
+                        imprint_url: null,
+                        source_code_url: "",
+                        issue_tracker_url: "",
+                        oidc: { issuer: "https://auth.example.org/", client_id: "x" },
+                    }),
+                },
+            },
+        ],
+    }).compileComponents();
 
-  configureStore(TestBed.inject(Store));
+    configureStore(TestBed.inject(Store));
 
-  const fixture = TestBed.createComponent(component as never) as ComponentFixture<T>;
-  for (const [key, value] of Object.entries(inputs)) {
-    fixture.componentRef.setInput(key, value);
-  }
-  await fixture.whenStable();
-  return fixture;
+    const fixture = TestBed.createComponent(component as never) as ComponentFixture<T>;
+    for (const [key, value] of Object.entries(inputs)) {
+        fixture.componentRef.setInput(key, value);
+    }
+    await fixture.whenStable();
+    return fixture;
 }
 
 function text(fixture: ComponentFixture<unknown>): string {
-  return (fixture.nativeElement as HTMLElement).textContent ?? '';
+    return (fixture.nativeElement as HTMLElement).textContent ?? "";
 }
 
-describe('screens render', () => {
-  afterEach(() => TestBed.resetTestingModule());
+describe("screens render", () => {
+    afterEach(() => TestBed.resetTestingModule());
 
-  it('expenses feed shows the expense, its group and the payer', async () => {
-    const fixture = await setup(Expenses);
-    const rendered = text(fixture);
-    expect(rendered).toContain('Ausgabe 10');
-    expect(rendered).toContain('WG Sonnenweg');
-    expect(rendered).toContain('Marco');
-    // 60 split two ways: the user's own share is 30.
-    expect(rendered).toContain('30.00');
-  });
+    it("expenses feed shows the expense, its group and the payer", async () => {
+        const fixture = await setup(Expenses);
+        const rendered = text(fixture);
+        expect(rendered).toContain("Ausgabe 10");
+        expect(rendered).toContain("WG Sonnenweg");
+        expect(rendered).toContain("Marco");
+        // 60 split two ways: the user's own share is 30.
+        expect(rendered).toContain("30.00");
+    });
 
-  it('groups list shows members, expenses and the balance', async () => {
-    const fixture = await setup(Groups);
-    const rendered = text(fixture);
-    expect(rendered).toContain('WG Sonnenweg');
-    expect(rendered).toContain('2 Mitglieder');
-    // The user paid 60 and owes 30, so they are owed 30.
-    expect(rendered).toContain('30.00');
-    expect(rendered).toContain('bekommst du zurück');
-  });
+    it("groups list shows members, expenses and the balance", async () => {
+        const fixture = await setup(Groups);
+        const rendered = text(fixture);
+        expect(rendered).toContain("WG Sonnenweg");
+        expect(rendered).toContain("2 Mitglieder");
+        // The user paid 60 and owes 30, so they are owed 30.
+        expect(rendered).toContain("30.00");
+        expect(rendered).toContain("bekommst du zurück");
+    });
 
-  it('group view renders the balance toggle and the expense list', async () => {
-    const fixture = await setup(GroupView, { id: '1' });
-    const rendered = text(fixture);
-    expect(rendered).toContain('WG Sonnenweg');
-    expect(rendered).toContain('Dein Saldo');
-    expect(rendered).toContain('Ausgabe 10');
-  });
+    it("group view renders the balance toggle and the expense list", async () => {
+        const fixture = await setup(GroupView, { id: "1" });
+        const rendered = text(fixture);
+        expect(rendered).toContain("WG Sonnenweg");
+        expect(rendered).toContain("Dein Saldo");
+        expect(rendered).toContain("Ausgabe 10");
+    });
 
-  it('group view balance panel lists members and the settlement', async () => {
-    const fixture = await setup<GroupView>(GroupView, { id: '1' });
-    (fixture.componentInstance as unknown as { panelOpen: { set(v: boolean): void } }).panelOpen.set(
-      true,
-    );
-    await fixture.whenStable();
+    it("group view balance panel lists members and the settlement", async () => {
+        const fixture = await setup<GroupView>(GroupView, { id: "1" });
+        (fixture.componentInstance as unknown as { panelOpen: { set(v: boolean): void } }).panelOpen.set(true);
+        await fixture.whenStable();
 
-    const rendered = text(fixture);
-    expect(rendered).toContain('Bob');
-    expect(rendered).toContain('Ausgleich');
-    // Bob owes Marco 30 — the settlement must name the payer first.
-    expect(rendered).toContain('Bob zahlt Marco');
-  });
+        const rendered = text(fixture);
+        expect(rendered).toContain("Bob");
+        expect(rendered).toContain("Ausgleich");
+        // Bob owes Marco 30 — the settlement must name the payer first.
+        expect(rendered).toContain("Bob zahlt Marco");
+    });
 
-  it('balances screen nets by group and by person', async () => {
-    const fixture = await setup(Balances);
-    const rendered = text(fixture);
-    expect(rendered).toContain('Nach Gruppe');
-    expect(rendered).toContain('Nach Person');
-    expect(rendered).toContain('Bob');
-  });
+    it("balances screen nets by group and by person", async () => {
+        const fixture = await setup(Balances);
+        const rendered = text(fixture);
+        expect(rendered).toContain("Nach Gruppe");
+        expect(rendered).toContain("Nach Person");
+        expect(rendered).toContain("Bob");
+    });
 
-  it('profile shows the account and the sign-out row', async () => {
-    const fixture = await setup(Profile);
-    const rendered = text(fixture);
-    expect(rendered).toContain('marco');
-    expect(rendered).toContain('ak-abc');
-    expect(rendered).toContain('Abmelden');
-  });
+    it("profile shows the account and the sign-out row", async () => {
+        const fixture = await setup(Profile);
+        const rendered = text(fixture);
+        expect(rendered).toContain("marco");
+        expect(rendered).toContain("ak-abc");
+        expect(rendered).toContain("Abmelden");
+    });
 
-  it('editor opens an existing expense with its values loaded', async () => {
-    const fixture = await setup(Editor, { groupId: '1', expenseId: '10' });
-    const rendered = text(fixture);
-    expect(rendered).toContain('Ausgabe bearbeiten');
-    expect(rendered).toContain('Marco');
-    expect(rendered).toContain('Bob');
-    expect(rendered).toContain('Ausgabe löschen');
-  });
+    it("editor opens an existing expense with its values loaded", async () => {
+        const fixture = await setup(Editor, { groupId: "1", expenseId: "10" });
+        const rendered = text(fixture);
+        expect(rendered).toContain("Ausgabe bearbeiten");
+        expect(rendered).toContain("Marco");
+        expect(rendered).toContain("Bob");
+        expect(rendered).toContain("Ausgabe löschen");
+    });
 
-  it('editor for a new expense defaults to the user paying and everyone splitting', async () => {
-    const fixture = await setup(Editor, { groupId: '1', expenseId: 'new' });
-    const rendered = text(fixture);
-    expect(rendered).toContain('Neue Ausgabe');
-    // No delete row on something that does not exist yet.
-    expect(rendered).not.toContain('Ausgabe löschen');
-  });
+    it("editor for a new expense defaults to the user paying and everyone splitting", async () => {
+        const fixture = await setup(Editor, { groupId: "1", expenseId: "new" });
+        const rendered = text(fixture);
+        expect(rendered).toContain("Neue Ausgabe");
+        // No delete row on something that does not exist yet.
+        expect(rendered).not.toContain("Ausgabe löschen");
+    });
 });

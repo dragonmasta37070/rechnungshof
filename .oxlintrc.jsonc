@@ -13,5 +13,9 @@
         "react-perf/jsx-no-new-function-as-prop": "off",
         "react-perf/jsx-no-new-array-as-prop": "off",
         "unicorn/prefer-add-event-listener": "off",
+        // An Angular component or directive with no members is idiomatic, not a
+        // smell — the decorator is the whole declaration. Without this, every
+        // presentational component needs a dummy field to satisfy the rule.
+        "typescript/no-extraneous-class": ["error", { "allowWithDecorator": true }],
     },
 }
