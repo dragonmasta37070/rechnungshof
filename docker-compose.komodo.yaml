@@ -2,8 +2,11 @@
 #
 # Deliberately NOT based on docker-compose.prod.yaml: that one pulls
 # quay.io/abrechnung/*:latest-release, which is upstream's image and still has
-# the local email/password login this fork removed. This file builds both images
-# from the repository Komodo checks out, so what runs is actually Rechnungshof.
+# the local email/password login this fork removed. These images are our own,
+# built and pushed to GHCR by .github/workflows/deploy.yml on every push to
+# master, which then triggers Komodo to pull and redeploy.
+#
+# IMAGE_TAG defaults to latest; set it to a commit sha to pin or roll back.
 #
 # Traefik points at the frontend, not the api. nginx inside the frontend
 # container serves the Angular app and proxies /api to the backend, so the
@@ -18,12 +21,8 @@ name: rechnungshof
 services:
     frontend:
         container_name: rechnungshof_frontend
-        build:
-            # Root context on purpose: the Angular app imports @abrechnung/core
-            # and friends from source through tsconfig path aliases, so the whole
-            # pnpm workspace has to be in the build context.
-            context: .
-            dockerfile: docker/Dockerfile-frontend-angular
+        image: ghcr.io/dragonmasta37070/rechnungshof-frontend:${IMAGE_TAG:-latest}
+        pull_policy: always
         restart: unless-stopped
         depends_on:
             api:
@@ -42,9 +41,8 @@ services:
 
     api:
         container_name: rechnungshof_backend
-        build:
-            context: .
-            dockerfile: docker/Dockerfile-api
+        image: ghcr.io/dragonmasta37070/rechnungshof-api:${IMAGE_TAG:-latest}
+        pull_policy: always
         command: api
         restart: unless-stopped
         depends_on:

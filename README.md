@@ -45,6 +45,11 @@ backend, and PostgreSQL. Traefik terminates TLS and routes the domain to the
 frontend; nginx serves the app and proxies `/api` to the backend, so the browser
 only ever sees one origin.
 
+Images are **not** built on the server. Every push to `master` runs
+[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml), which builds both
+images for amd64 and arm64, pushes them to GHCR, and then calls Komodo to
+redeploy the stack. Komodo only pulls.
+
 ```
                  ┌── Traefik ──┐
   browser ──TLS──┤             │
@@ -91,7 +96,25 @@ curl -s https://auth.moretta.at/application/o/rechnungshof/.well-known/openid-co
 
 Bind a user or group to the application, or nobody gets in.
 
-### 2. Komodo stack
+### 2. GitHub secrets
+
+The deploy workflow needs three repository secrets so it can tell Komodo to
+redeploy — `GITHUB_TOKEN` is provided automatically and covers the GHCR push:
+
+| Secret | Value |
+|--------|-------|
+| `KOMODO_URL` | your Komodo instance, e.g. `https://komodo.moretta.at` |
+| `KOMODO_API_KEY` | Komodo → Settings → API Keys |
+| `KOMODO_API_SECRET` | the secret shown when the key is created |
+
+The stack in Komodo must be named **`rechnungshof`** — the workflow addresses it
+by name.
+
+Packages are private by default. Either make the two packages public under
+`github.com/users/dragonmasta37070/packages`, or give the Komodo host a pull
+secret.
+
+### 3. Komodo stack
 
 Create a **Stack** resource pointing at this repository:
 
@@ -102,9 +125,10 @@ Create a **Stack** resource pointing at this repository:
 | Branch | `phase1-fork-setup` |
 | File path | `docker-compose.komodo.yaml` |
 
-No access token is needed while the repository is public.
+No access token is needed while the repository is public. The compose file only
+references images — nothing is built on the server.
 
-### 3. Environment
+### 4. Environment
 
 Komodo writes these into an `.env` next to the compose file, which is where the
 `${...}` interpolation reads them from:
@@ -140,13 +164,18 @@ validates the token audience against it, and the frontend reads it from
 apart. The **redirect URI needs no variable at all** — the app derives
 `<origin>/auth/callback` from its own location.
 
-### 4. Deploy
+Optionally pin a release by setting `IMAGE_TAG` to a commit sha; it defaults to
+`latest`, which is what the auto-deploy relies on.
 
-Hit **Deploy** in Komodo. The first run builds both images, which takes a few
-minutes; database migrations run automatically from the api container's
-entrypoint.
+### 5. Deploy
 
-### 5. Verify
+Push to `master`, or hit **Deploy** in Komodo for the first run. Database
+migrations run automatically from the api container's entrypoint.
+
+From then on it is hands-off: push to `master` → GitHub builds and pushes both
+images → Komodo redeploys.
+
+### 6. Verify
 
 ```bash
 curl -s -o /dev/null -w "%{http_code}\n" https://rechnungshof.moretta.at/
