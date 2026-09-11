@@ -198,12 +198,137 @@
 
 @media (min-width: 900px) {
     .head {
-        padding: 0 0 var(--space-4);
         max-width: 960px;
         margin: 0 auto;
+        padding: 0 var(--space-6) var(--space-4);
     }
     .panel {
         width: 400px;
         left: auto;
+    }
+}
+
+.cap-action {
+    border: 0;
+    background: none;
+    color: var(--text-2);
+    font: inherit;
+    font-size: 11px;
+    text-transform: none;
+    letter-spacing: 0;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.row.static {
+    cursor: default;
+}
+
+.row.static:hover {
+    background: none;
+}
+
+.avatar {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-pill);
+    background: var(--elevated);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* Sheet for adding a participant — same shape as the group-create sheet. */
+.scrim {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 20;
+}
+
+.sheet {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    padding: var(--space-5) var(--space-4) calc(var(--space-8) + env(safe-area-inset-bottom));
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    background: var(--surface);
+    z-index: 21;
+}
+
+.sheet h2 {
+    margin: 0 0 var(--space-4);
+    font-size: 19px;
+    font-weight: 600;
+}
+
+.sheet label {
+    display: block;
+    margin-bottom: var(--space-2);
+    color: var(--text-3);
+    font-size: 12px;
+}
+
+.sheet input {
+    width: 100%;
+    min-height: 48px;
+    padding: 0 var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--elevated);
+    color: var(--text);
+    font: inherit;
+}
+
+.sheet .hint {
+    margin: var(--space-2) 0 var(--space-5);
+    color: var(--text-3);
+    font-size: 12px;
+}
+
+.sheet .actions {
+    display: flex;
+    gap: var(--space-3);
+}
+
+.sheet .actions button {
+    flex: 1;
+    min-height: 48px;
+    border-radius: var(--radius-md);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.sheet .actions .ghost {
+    border: 1px solid var(--border);
+    background: none;
+    color: var(--text-2);
+}
+
+.sheet .actions .primary {
+    border: 0;
+    background: var(--accent);
+    color: var(--on-accent);
+}
+
+.sheet .actions .primary:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+@media (min-width: 900px) {
+    .sheet {
+        top: 50%;
+        right: auto;
+        bottom: auto;
+        left: 50%;
+        width: 420px;
+        transform: translate(-50%, -50%);
+        border-radius: var(--radius-xl);
     }
 }

@@ -70,6 +70,13 @@ export class Api {
         return this.http.delete(`/api/v1/groups/${groupId}/transactions/${transactionId}`);
     }
 
+    createAccount(groupId: number, name: string): Observable<PersonalAccount> {
+        return this.http.post<PersonalAccount>(`/api/v1/groups/${groupId}/accounts`, {
+            type: "personal",
+            name,
+        });
+    }
+
     createGroup(payload: Schemas.GroupCreatePayload): Observable<Group> {
         return this.http.post<Group>("/api/v1/groups", payload);
     }

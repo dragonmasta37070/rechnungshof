@@ -1,0 +1,8 @@
+:host {
+    /* Angular renders app-root as an unknown element, which defaults to
+       display: inline. A routed component inside an inline host gets no proper
+       block containing block, so `margin: 0 auto` inside those components stops
+       centering and widths shrink to fit. */
+    display: block;
+    min-height: 100dvh;
+}

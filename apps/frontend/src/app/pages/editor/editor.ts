@@ -6,13 +6,12 @@ import { Api, type NewTransaction, type SplitMode } from "../../api/api";
 import { currencySymbol, formatDateShort, toIsoDate } from "../../domain/format";
 import { respread, splitEvenly, sumShares, validateSplit } from "../../domain/split";
 import { Store } from "../../domain/store";
-import { Amount } from "../../ui/amount";
 import { Icon } from "../../ui/icon";
 
 @Component({
     selector: "app-editor",
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [FormsModule, Icon, Amount],
+    imports: [FormsModule, Icon],
     templateUrl: "./editor.html",
     styleUrls: ["../../ui/ui.css", "./editor.css"],
 })

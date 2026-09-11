@@ -208,7 +208,12 @@
     }
 
     .page-title {
-        padding: 0;
+        /* Same column as .page: the title lives outside it in the templates, so
+           without this it sits flush against the left edge on wide viewports
+           while the content below is centred. */
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 0 var(--space-6);
     }
 
     .page-title h1 {

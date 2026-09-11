@@ -56,16 +56,25 @@ export class Groups {
             return;
         }
         this.saving.set(true);
-        this.api.createGroup({ name, currency_identifier: "EUR" }).subscribe({
-            next: (group) => {
-                this.saving.set(false);
-                this.sheetOpen.set(false);
-                // Reload so the new group arrives with its auto-created account, then
-                // go straight into it — creating a group is always followed by wanting
-                // to be in it.
-                this.store.load().subscribe(() => this.router.navigate(["/groups", group.id]));
-            },
-            error: () => this.saving.set(false),
-        });
+        this.api
+            .createGroup({
+                name,
+                currency_identifier: "EUR",
+                // The backend defaults this to false, which creates a group with no
+                // accounts at all — nothing to split across and nobody to pick as
+                // payer. The creator is obviously a participant.
+                add_user_account_on_join: true,
+            })
+            .subscribe({
+                next: (group) => {
+                    this.saving.set(false);
+                    this.sheetOpen.set(false);
+                    // Reload so the new group arrives with its auto-created account, then
+                    // go straight into it — creating a group is always followed by wanting
+                    // to be in it.
+                    this.store.load().subscribe(() => this.router.navigate(["/groups", group.id]));
+                },
+                error: () => this.saving.set(false),
+            });
     }
 }

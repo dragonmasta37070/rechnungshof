@@ -1,5 +1,5 @@
 import { provideHttpClient } from "@angular/common/http";
-import { provideHttpClientTesting } from "@angular/common/http/testing";
+import { HttpTestingController, provideHttpClientTesting } from "@angular/common/http/testing";
 import { ComponentFixture, TestBed } from "@angular/core/testing";
 import { provideRouter } from "@angular/router";
 import { OidcSecurityService } from "angular-auth-oidc-client";
@@ -214,5 +214,31 @@ describe("screens render", () => {
         expect(rendered).toContain("Neue Ausgabe");
         // No delete row on something that does not exist yet.
         expect(rendered).not.toContain("Ausgabe löschen");
+    });
+});
+
+describe("group creation", () => {
+    afterEach(() => TestBed.resetTestingModule());
+
+    it("asks the backend to create an account for the creator", async () => {
+        // Without add_user_account_on_join the backend makes a group with no
+        // accounts: nothing to split across and nobody selectable as payer.
+        // It defaults to false, so omitting it is not harmless.
+        const fixture = await setup(Groups);
+        const http = TestBed.inject(HttpTestingController);
+
+        const instance = fixture.componentInstance as unknown as {
+            newName: { set(v: string): void };
+            create(): void;
+        };
+        instance.newName.set("Neue Gruppe");
+        instance.create();
+
+        const req = http.expectOne("/api/v1/groups");
+        expect(req.request.body.add_user_account_on_join).toBe(true);
+        expect(req.request.body.name).toBe("Neue Gruppe");
+        // No verify(): creating a group deliberately reloads the store, so a
+        // follow-up GET /api/v1/profile is correct behaviour, not a leak.
+        req.flush({ id: 99 });
     });
 });

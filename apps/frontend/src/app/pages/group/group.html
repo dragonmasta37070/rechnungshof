@@ -69,6 +69,25 @@
         }
     </div>
 
+    <p class="cap">
+        <span>Mitglieder</span>
+        <button type="button" class="cap-action" (click)="addPersonOpen.set(true)">Person hinzufügen</button>
+    </p>
+    <div class="list">
+        @for (member of members(); track member.id) {
+        <div class="row static">
+            <span class="avatar">{{ member.name.charAt(0) }}</span>
+            <span class="body">
+                <span class="title">{{ member.name }}@if (member.isOwn) { (du) }</span>
+            </span>
+        </div>
+        } @empty {
+        <div class="row static">
+            <span class="body"><span class="sub">Noch niemand in dieser Gruppe.</span></span>
+        </div>
+        }
+    </div>
+
     @for (section of sections(); track section.label) {
     <p class="cap"><span>{{ section.label }}</span><span>{{ section.rows.length }}</span></p>
     <div class="list">
@@ -109,6 +128,34 @@
     </div>
     }
 </div>
+
+@if (addPersonOpen()) {
+<div class="scrim" (click)="addPersonOpen.set(false)"></div>
+<div class="sheet" role="dialog" aria-label="Person hinzufügen">
+    <h2>Person hinzufügen</h2>
+    <label for="person-name">Name</label>
+    <input
+        id="person-name"
+        type="text"
+        [ngModel]="newPersonName()"
+        (ngModelChange)="newPersonName.set($event)"
+        placeholder="z. B. Bob"
+        autocomplete="off"
+    />
+    <p class="hint">Diese Person braucht kein eigenes Konto.</p>
+    <div class="actions">
+        <button type="button" class="ghost" (click)="addPersonOpen.set(false)">Abbrechen</button>
+        <button
+            type="button"
+            class="primary"
+            [disabled]="!newPersonName().trim() || addingPerson()"
+            (click)="addPerson()"
+        >
+            Hinzufügen
+        </button>
+    </div>
+</div>
+}
 
 <button class="fab" type="button" (click)="newExpense()" aria-label="Ausgabe erfassen">
     <app-icon name="plus" [size]="22" />

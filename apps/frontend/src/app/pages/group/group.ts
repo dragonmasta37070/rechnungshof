@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from "@angular/core";
+import { FormsModule } from "@angular/forms";
 import { Router } from "@angular/router";
 
 import { Api, type Transaction } from "../../api/api";
@@ -25,7 +26,7 @@ interface DateSection {
 @Component({
     selector: "app-group",
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [Icon, Amount],
+    imports: [FormsModule, Icon, Amount],
     templateUrl: "./group.html",
     styleUrls: ["../../ui/ui.css", "./group.css"],
 })
@@ -39,6 +40,9 @@ export class GroupView {
 
     protected readonly panelOpen = signal(false);
     protected readonly settling = signal<number | null>(null);
+    protected readonly addPersonOpen = signal(false);
+    protected readonly newPersonName = signal("");
+    protected readonly addingPerson = signal(false);
 
     protected readonly groupId = computed(() => Number(this.id()));
     protected readonly group = computed(() => this.store.groups().find((g) => g.id === this.groupId()) ?? null);
@@ -126,6 +130,30 @@ export class GroupView {
 
         return [...byDate.entries()].map(([date, rows]) => ({ label: formatDateLong(date), rows }));
     });
+
+    /**
+     * Adds a participant who has no account of their own.
+     *
+     * The common case for a shared-expenses app: you split with flatmates and
+     * friends who will never log in. Without this a group only ever contains
+     * its creator, and nothing can be split.
+     */
+    addPerson(): void {
+        const name = this.newPersonName().trim();
+        if (!name || this.addingPerson()) {
+            return;
+        }
+        this.addingPerson.set(true);
+        this.api.createAccount(this.groupId(), name).subscribe({
+            next: () =>
+                this.store.refreshGroup(this.groupId()).subscribe(() => {
+                    this.addingPerson.set(false);
+                    this.addPersonOpen.set(false);
+                    this.newPersonName.set("");
+                }),
+            error: () => this.addingPerson.set(false),
+        });
+    }
 
     back(): void {
         void this.router.navigate(["/groups"]);
