@@ -3,7 +3,9 @@ on:
     # we build on all pushes to master to (hopefully) get early warning
     # of things breaking (but only build one set of debs)
     push:
-        branches: ["master"]
+        # This fork renamed its default branch to main; upstream is still on
+        # master. Listing both keeps the file working in either repository.
+        branches: ["master", "main"]
         # we do the full build on tags.
         tags: ["v*"]
 

@@ -45,7 +45,7 @@ backend, and PostgreSQL. Traefik terminates TLS and routes the domain to the
 frontend; nginx serves the app and proxies `/api` to the backend, so the browser
 only ever sees one origin.
 
-Images are **not** built on the server. Every push to `master` runs
+Images are **not** built on the server. Every push to `main` runs
 [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml), which builds both
 images for amd64 and arm64, pushes them to GHCR, and then calls Komodo to
 redeploy the stack. Komodo only pulls.
@@ -169,10 +169,10 @@ Optionally pin a release by setting `IMAGE_TAG` to a commit sha; it defaults to
 
 ### 5. Deploy
 
-Push to `master`, or hit **Deploy** in Komodo for the first run. Database
+Push to `main`, or hit **Deploy** in Komodo for the first run. Database
 migrations run automatically from the api container's entrypoint.
 
-From then on it is hands-off: push to `master` → GitHub builds and pushes both
+From then on it is hands-off: push to `main` → GitHub builds and pushes both
 images → Komodo redeploys.
 
 ### 6. Verify
