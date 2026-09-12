@@ -144,6 +144,7 @@ export class GroupView {
             return;
         }
         this.addingPerson.set(true);
+        this.store.notice.set(null);
         this.api.createAccount(this.groupId(), name).subscribe({
             next: () =>
                 this.store.refreshGroup(this.groupId()).subscribe(() => {
@@ -151,7 +152,10 @@ export class GroupView {
                     this.addPersonOpen.set(false);
                     this.newPersonName.set("");
                 }),
-            error: () => this.addingPerson.set(false),
+            error: () => {
+                this.addingPerson.set(false);
+                this.store.notice.set("Person konnte nicht hinzugefügt werden.");
+            },
         });
     }
 
@@ -180,6 +184,7 @@ export class GroupView {
         }
 
         this.settling.set(index);
+        this.store.notice.set(null);
         this.api
             .createTransaction(group.id, {
                 type: "transfer",
@@ -196,7 +201,10 @@ export class GroupView {
             })
             .subscribe({
                 next: () => this.store.refreshGroup(group.id).subscribe(() => this.settling.set(null)),
-                error: () => this.settling.set(null),
+                error: () => {
+                    this.settling.set(null);
+                    this.store.notice.set("Ausgleich konnte nicht gespeichert werden.");
+                },
             });
     }
 }

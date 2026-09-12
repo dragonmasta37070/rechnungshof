@@ -25,6 +25,15 @@ export class Editor {
     protected readonly store = inject(Store);
 
     protected readonly value = signal(0);
+    /**
+     * What the amount field actually shows.
+     *
+     * Binding the field to the parsed number instead made it fight the typist:
+     * a leading "0" re-rendered as "" and vanished, and a comma was rewritten to
+     * a dot mid-word with the caret jumping to the end. The number is derived
+     * from this, never the other way round.
+     */
+    protected readonly valueText = signal("");
     protected readonly name = signal("");
     protected readonly billedAt = signal(toIsoDate(new Date()));
     protected readonly creditorId = signal<number | null>(null);
@@ -85,34 +94,60 @@ export class Editor {
             : total.toFixed(2);
     });
 
+    /** The form is filled from the store once; after that it belongs to the user. */
+    private filled = false;
+
     constructor() {
-        // Load the expense being edited once the store has its data. An effect
-        // rather than a resolver, because the store may still be loading when the
-        // route activates after a hard refresh.
+        // This route sits outside the shell, and the shell is what loads the
+        // store — so on a reload while editing, or on a link opened directly,
+        // nothing would ever fetch the group, its people or the expense.
+        if (this.store.groups().length === 0) {
+            this.store.load().subscribe({ error: () => undefined });
+        }
+
+        // Fill the form once the store has the data. An effect rather than a
+        // resolver, because the store may still be loading when the route
+        // activates after a hard refresh.
         effect(() => {
             const group = this.group();
-            if (!group || !this.isNew()) {
+            if (this.filled || !group) {
+                return;
+            }
+
+            if (!this.isNew()) {
                 const existing = this.store.transactionsOf(this.gid()).find((t) => t.id === Number(this.expenseId()));
-                if (existing && this.name() === "") {
-                    this.value.set(existing.value);
-                    this.name.set(existing.name);
-                    this.billedAt.set(existing.billed_at);
-                    this.creditorId.set(Number(Object.keys(existing.creditor_shares)[0]));
-                    this.splitMode.set(existing.split_mode);
-                    this.shares.set(
-                        Object.fromEntries(
-                            Object.entries(existing.debitor_shares).map(([id, share]) => [Number(id), share])
-                        )
-                    );
+                if (!existing) {
+                    return;
                 }
+                // Guarded by `filled`, not by "the name field is still empty":
+                // that read made the effect depend on the name, so clearing the
+                // field re-ran this and threw away everything already typed.
+                this.filled = true;
+                this.value.set(existing.value);
+                this.valueText.set(existing.value.toFixed(2));
+                this.name.set(existing.name);
+                this.billedAt.set(existing.billed_at);
+                this.creditorId.set(Number(Object.keys(existing.creditor_shares)[0]));
+                this.splitMode.set(existing.split_mode);
+                this.shares.set(
+                    Object.fromEntries(
+                        Object.entries(existing.debitor_shares).map(([id, share]) => [Number(id), share])
+                    )
+                );
                 return;
             }
 
             // New expense: default to the user paying, everyone participating.
-            if (this.creditorId() === null) {
-                this.creditorId.set(group.owned_account_id ?? this.people()[0]?.id ?? null);
-                this.shares.set(Object.fromEntries(this.people().map((p) => [p.id, 1])));
+            // Waiting for the people is the point — accounts arrive after the
+            // group does, and the old guard (`creditorId === null`) closed on
+            // the first run, leaving the split permanently empty.
+            const people = this.people();
+            if (people.length === 0) {
+                return;
             }
+            this.filled = true;
+            this.creditorId.set(group.owned_account_id ?? people[0].id);
+            this.shares.set(Object.fromEntries(people.map((p) => [p.id, 1])));
         });
     }
 
@@ -169,7 +204,8 @@ export class Editor {
     }
 
     setValue(raw: string): void {
-        const parsed = Number(String(raw).replace(",", "."));
+        this.valueText.set(raw);
+        const parsed = Number(raw.replace(",", "."));
         this.value.set(Number.isNaN(parsed) ? 0 : parsed);
         // Absolute shares are amounts, so a changed total invalidates them.
         if (this.splitMode() === "absolute" && this.participants().length) {
@@ -217,13 +253,17 @@ export class Editor {
         };
 
         this.saving.set(true);
+        this.store.notice.set(null);
         const request = this.isNew()
             ? this.api.createTransaction(this.gid(), payload)
             : this.api.updateTransaction(this.gid(), Number(this.expenseId()), payload);
 
         request.subscribe({
             next: () => this.store.refreshGroup(this.gid()).subscribe(() => this.close()),
-            error: () => this.saving.set(false),
+            error: () => {
+                this.saving.set(false);
+                this.store.notice.set("Speichern fehlgeschlagen. Bitte nochmal versuchen.");
+            },
         });
     }
 
@@ -232,9 +272,13 @@ export class Editor {
             return;
         }
         this.saving.set(true);
+        this.store.notice.set(null);
         this.api.deleteTransaction(this.gid(), Number(this.expenseId())).subscribe({
             next: () => this.store.refreshGroup(this.gid()).subscribe(() => this.close()),
-            error: () => this.saving.set(false),
+            error: () => {
+                this.saving.set(false);
+                this.store.notice.set("Löschen fehlgeschlagen. Bitte nochmal versuchen.");
+            },
         });
     }
 

@@ -160,6 +160,16 @@
 <button class="fab" type="button" (click)="newExpense()" aria-label="Ausgabe erfassen">
     <app-icon name="plus" [size]="22" />
 </button>
-} @else {
+} @else if (store.loading()) {
 <p class="loading">Gruppe wird geladen …</p>
+} @else {
+<!-- Not every miss is a slow load: a deleted group, a stale link or a group
+     someone else owns all land here, and saying "loading" forever gives the
+     user nothing to do. -->
+<div class="empty">
+    <app-icon name="groups" [size]="32" />
+    <strong>Gruppe nicht gefunden</strong>
+    <span>Sie wurde gelöscht, oder du bist kein Mitglied.</span>
+    <button type="button" (click)="back()">Zu den Gruppen</button>
+</div>
 }

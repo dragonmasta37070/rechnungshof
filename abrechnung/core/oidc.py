@@ -83,7 +83,18 @@ class OIDCValidator:
             except JWTClaimsError as e:
                 # Well-formed and correctly signed, but not for us: wrong audience
                 # or wrong issuer. Refetching keys cannot change that.
-                logger.debug("rejected token with invalid claims: %s", e)
+                #
+                # A warning, not a debug line: our own provider signed this token,
+                # so a claim mismatch is a deployment error on this side, and it
+                # looks to the user exactly like a broken login with nothing in
+                # the log to explain it. Garbage tokens fail the signature check
+                # below instead, so this cannot be spammed from outside.
+                logger.warning(
+                    "rejected a correctly signed token (expected audience %r, issuer %r): %s",
+                    self.config.audience,
+                    self.config.issuer,
+                    e,
+                )
                 raise Unauthorized("invalid access token") from e
             except JWTError as e:
                 if force_refresh:

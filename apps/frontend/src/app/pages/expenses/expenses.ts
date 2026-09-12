@@ -94,9 +94,11 @@ export class Expenses {
     }
 
     newExpense(): void {
-        const groupId = this.store.activeGroupId() ?? this.store.groups()[0]?.id;
-        if (groupId != null) {
-            void this.router.navigate(["/groups", groupId, "expenses", "new"]);
-        }
+        // An expense belongs to exactly one group, and this screen spans all of
+        // them. Falling back to "the first group" silently books money against
+        // whichever one happened to load first; with more than one, ask.
+        const groups = this.store.groups();
+        const groupId = this.store.activeGroupId() ?? (groups.length === 1 ? groups[0].id : null);
+        void this.router.navigate(groupId == null ? ["/groups"] : ["/groups", groupId, "expenses", "new"]);
     }
 }

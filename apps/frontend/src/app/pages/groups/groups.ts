@@ -56,6 +56,7 @@ export class Groups {
             return;
         }
         this.saving.set(true);
+        this.store.notice.set(null);
         this.api
             .createGroup({
                 name,
@@ -74,7 +75,10 @@ export class Groups {
                     // to be in it.
                     this.store.load().subscribe(() => this.router.navigate(["/groups", group.id]));
                 },
-                error: () => this.saving.set(false),
+                error: () => {
+                    this.saving.set(false);
+                    this.store.notice.set("Gruppe konnte nicht angelegt werden.");
+                },
             });
     }
 }

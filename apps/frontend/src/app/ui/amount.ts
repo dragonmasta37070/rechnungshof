@@ -31,6 +31,11 @@ export class Amount {
     readonly currency = input("EUR");
     /** Render the magnitude only — for pills that state the direction in words. */
     readonly absolute = input(false);
+    /**
+     * Drop the colour. For totals that are not a claim on anyone: "your share
+     * overall" is money you spent, and painting it green read as a windfall.
+     */
+    readonly plain = input(false);
 
     protected readonly text = computed(() =>
         formatAmount(this.absolute() ? Math.abs(this.value()) : this.value(), this.currency())
@@ -38,7 +43,7 @@ export class Amount {
 
     protected readonly tone = computed(() => {
         const value = this.value();
-        if (Math.abs(value) < 0.005) {
+        if (this.plain() || Math.abs(value) < 0.005) {
             return "neutral";
         }
         return value > 0 ? "positive" : "negative";

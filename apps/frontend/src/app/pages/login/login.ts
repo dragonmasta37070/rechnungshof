@@ -1,6 +1,7 @@
 import { Component, inject } from "@angular/core";
 import { OidcSecurityService } from "angular-auth-oidc-client";
 
+import { ProviderStatusService } from "../../core/provider-status";
 import { Icon } from "../../ui/icon";
 
 /**
@@ -16,6 +17,12 @@ import { Icon } from "../../ui/icon";
             <div class="mark" aria-hidden="true"><app-icon name="receipt" [size]="26" /></div>
             <h1>Rechnungshof</h1>
             <p>Geteilte Kosten, sauber abgerechnet. Die Anmeldung läuft ausschließlich über Authentik.</p>
+            @if (providerStatus.isRejected()) {
+                <p class="rejected" role="alert">
+                    Die Anmeldung bei Authentik hat geklappt, der Server hat den Token aber abgelehnt. Das ist eine
+                    Konfigurationssache: Audience, Issuer oder der fehlende E-Mail-Claim.
+                </p>
+            }
             <button type="button" (click)="signIn()">
                 <app-icon name="key" [size]="16" />
                 Mit Authentik anmelden
@@ -30,8 +37,10 @@ import { Icon } from "../../ui/icon";
 })
 export class Login {
     private readonly oidc = inject(OidcSecurityService);
+    protected readonly providerStatus = inject(ProviderStatusService);
 
     signIn(): void {
+        this.providerStatus.clearRejected();
         this.oidc.authorize();
     }
 }

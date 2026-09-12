@@ -76,6 +76,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
                             providerStatus.reportUnavailable();
                         } else if (error.status === 401) {
                             providerStatus.reportReachable();
+                            providerStatus.reportRejected();
                             // Send the user to the login screen — never straight into
                             // `authorize()`. A backend that answers 401 for a structurally
                             // valid token (unprovisioned user, missing email claim, clock

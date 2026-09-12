@@ -101,7 +101,7 @@ function configureStore(store: Store): void {
     store.activeGroupId.set(1);
 }
 
-async function setup<T>(component: unknown, inputs: Record<string, unknown> = {}) {
+async function setup<T>(component: unknown, inputs: Record<string, unknown> = {}, fillStore = true) {
     await TestBed.configureTestingModule({
         providers: [
             provideRouter([]),
@@ -126,7 +126,9 @@ async function setup<T>(component: unknown, inputs: Record<string, unknown> = {}
         ],
     }).compileComponents();
 
-    configureStore(TestBed.inject(Store));
+    if (fillStore) {
+        configureStore(TestBed.inject(Store));
+    }
 
     const fixture = TestBed.createComponent(component as never) as ComponentFixture<T>;
     for (const [key, value] of Object.entries(inputs)) {
@@ -240,5 +242,57 @@ describe("group creation", () => {
         // No verify(): creating a group deliberately reloads the store, so a
         // follow-up GET /api/v1/profile is correct behaviour, not a leak.
         req.flush({ id: 99 });
+    });
+});
+
+describe("expense editor", () => {
+    afterEach(() => TestBed.resetTestingModule());
+
+    interface EditorInternals {
+        name: { set(v: string): void; (): string };
+        value: { set(v: number): void; (): number };
+        participants(): number[];
+        creditorId(): number | null;
+    }
+
+    it("keeps what was typed when the name field is cleared", async () => {
+        const fixture = await setup<Editor>(Editor, { groupId: "1", expenseId: "10" });
+        const editor = fixture.componentInstance as unknown as EditorInternals;
+
+        // The form used to be refilled whenever the name was empty, and reading
+        // the name inside that effect made clearing the field re-read the stored
+        // expense — silently reverting every other edit along with it.
+        editor.value.set(99);
+        editor.name.set("");
+        await fixture.whenStable();
+
+        expect(editor.value()).toBe(99);
+        expect(editor.name()).toBe("");
+    });
+
+    it("preselects everyone when the accounts arrive after the group", async () => {
+        const fixture = await setup<Editor>(Editor, { groupId: "1", expenseId: "new" }, false);
+        const store = TestBed.inject(Store);
+        const editor = fixture.componentInstance as unknown as EditorInternals;
+
+        // The order the store actually fills in: the group list first, then each
+        // group's accounts. Defaulting the split on the first of those two left
+        // it permanently empty — no participants, no payer, nothing to split.
+        store.groups.set([GROUP]);
+        await fixture.whenStable();
+        store.data.set({ 1: { accounts: [ME, BOB], transactions: [] } });
+        await fixture.whenStable();
+
+        expect(editor.participants()).toEqual([ME.id, BOB.id]);
+        expect(editor.creditorId()).toBe(ME.id);
+    });
+});
+
+describe("group view", () => {
+    afterEach(() => TestBed.resetTestingModule());
+
+    it("says a group it cannot find is missing rather than loading forever", async () => {
+        const fixture = await setup<GroupView>(GroupView, { id: "999" });
+        expect(text(fixture)).toContain("Gruppe nicht gefunden");
     });
 });

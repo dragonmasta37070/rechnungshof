@@ -200,20 +200,36 @@
     font-weight: 600;
 }
 
+.empty button {
+    min-height: 44px;
+    margin-top: var(--space-2);
+    padding: 0 var(--space-5);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: none;
+    color: var(--text-2);
+    font: inherit;
+    cursor: pointer;
+}
+
 @media (min-width: 900px) {
     .page {
         max-width: 960px;
         margin: 0 auto;
-        padding: var(--space-7) var(--space-6) var(--space-8);
+        /* No top padding: the title block above carries it, exactly as on
+           mobile. Having both meant a 32px gap between heading and content. */
+        padding: 0 var(--space-6) var(--space-8);
     }
 
     .page-title {
         /* Same column as .page: the title lives outside it in the templates, so
            without this it sits flush against the left edge on wide viewports
-           while the content below is centred. */
+           while the content below is centred. The top padding is the other half
+           of the same bug — without it the heading sits against the very top
+           edge of the window. */
         max-width: 960px;
         margin: 0 auto;
-        padding: 0 var(--space-6);
+        padding: var(--space-7) var(--space-6) 0;
     }
 
     .page-title h1 {

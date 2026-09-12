@@ -324,6 +324,16 @@
     font-size: 12px;
 }
 
+.notice {
+    margin: 0;
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--accent-line);
+    border-radius: var(--radius-md);
+    background: rgba(240, 92, 92, 0.16);
+    color: var(--color-error);
+    font-size: 13px;
+}
+
 .danger-row {
     display: flex;
     align-items: center;

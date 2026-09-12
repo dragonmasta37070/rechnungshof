@@ -200,7 +200,9 @@
     .head {
         max-width: 960px;
         margin: 0 auto;
-        padding: 0 var(--space-6) var(--space-4);
+        /* Mobile gives this block 52px of top padding; dropping it entirely on
+           desktop glued the group name to the top edge of the window. */
+        padding: var(--space-7) var(--space-6) var(--space-4);
     }
     .panel {
         width: 400px;

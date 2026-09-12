@@ -27,7 +27,16 @@ export class Store {
     readonly groups = signal<Group[]>([]);
     readonly data = signal<Record<number, GroupData>>({});
     readonly loading = signal(false);
-    readonly error = signal<string | null>(null);
+
+    /**
+     * A one-line failure message for the user.
+     *
+     * Every write in this app used to fail silently — the spinner stopped and
+     * nothing else happened, which is indistinguishable from success until the
+     * expense is missing later. One shared signal, rendered once in the shell
+     * and once in the editor, is cheaper than an error state per screen.
+     */
+    readonly notice = signal<string | null>(null);
 
     /** The group currently being viewed, for the desktop sidebar and the FAB. */
     readonly activeGroupId = signal<number | null>(null);
@@ -75,7 +84,7 @@ export class Store {
 
     load() {
         this.loading.set(true);
-        this.error.set(null);
+        this.notice.set(null);
 
         return this.api.profile().pipe(
             tap((user) => this.profile.set(user)),
@@ -97,7 +106,7 @@ export class Store {
                 next: () => this.loading.set(false),
                 error: () => {
                     this.loading.set(false);
-                    this.error.set("Daten konnten nicht geladen werden.");
+                    this.notice.set("Daten konnten nicht geladen werden.");
                 },
             })
         );

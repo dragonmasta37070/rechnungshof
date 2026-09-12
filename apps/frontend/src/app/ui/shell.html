@@ -1,5 +1,12 @@
 @if (providerStatus.isUnavailable()) {
 <p class="outage" role="status">Authentik ist gerade nicht erreichbar. Du bleibst angemeldet.</p>
+} @if (store.notice(); as notice) {
+<p class="notice" role="alert">
+    {{ notice }}
+    <button type="button" (click)="store.notice.set(null)" aria-label="Meldung schließen">
+        <app-icon name="close" [size]="14" />
+    </button>
+</p>
 }
 
 <div class="frame">

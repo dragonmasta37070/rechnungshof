@@ -10,11 +10,11 @@
     <div class="card">
         <div class="stat-row">
             <span class="label">Dein Anteil insgesamt</span>
-            <span class="value"><app-amount [value]="stats().ownShare" /></span>
+            <span class="value"><app-amount [value]="stats().ownShare" [plain]="true" /></span>
         </div>
         <div class="stat-row">
             <span class="label">Von dir bezahlt</span>
-            <span class="value"><app-amount [value]="stats().paidByUser" /></span>
+            <span class="value"><app-amount [value]="stats().paidByUser" [plain]="true" /></span>
         </div>
         <div class="stat-row">
             <span class="label">Ausgaben über alle Gruppen</span>

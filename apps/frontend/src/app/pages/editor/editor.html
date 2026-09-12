@@ -10,13 +10,17 @@
 </header>
 
 <div class="body">
+    @if (store.notice(); as notice) {
+    <p class="notice" role="alert">{{ notice }}</p>
+    }
+
     <section class="amount-field">
         <div class="amount-input">
             <input
                 type="text"
                 inputmode="decimal"
                 placeholder="0.00"
-                [value]="value() || ''"
+                [value]="valueText()"
                 (input)="setValue($any($event.target).value)"
                 aria-label="Betrag"
             />

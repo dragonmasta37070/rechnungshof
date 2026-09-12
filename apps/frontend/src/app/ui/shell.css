@@ -13,6 +13,33 @@
     text-align: center;
 }
 
+.notice {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    margin: 0;
+    padding: var(--space-2) var(--space-4);
+    background: rgba(240, 92, 92, 0.16);
+    border-bottom: 1px solid var(--border);
+    color: var(--color-error);
+    font-size: 12px;
+    text-align: center;
+}
+
+.notice button {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 24px;
+    height: 24px;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: none;
+    color: inherit;
+    cursor: pointer;
+}
+
 .frame {
     display: flex;
     min-height: 100dvh;
