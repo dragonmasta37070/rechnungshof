@@ -2,10 +2,10 @@
     "version": "0.0.1",
     "configurations": [
         {
-            "name": "rechnungshof-frontend",
+            "name": "frontend",
             "runtimeExecutable": "pnpm",
-            "runtimeArgs": ["--filter", "frontend", "exec", "ng", "serve", "--port", "9942"],
-            "port": 9942
+            "runtimeArgs": ["--filter", "frontend", "start"],
+            "port": 4200
         }
     ]
 }
