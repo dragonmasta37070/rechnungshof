@@ -131,6 +131,13 @@ async def test_full_expense_workflow(api: httpx.AsyncClient):
     me = accounts[0]
     assert me["type"] == "personal"
 
+    # ...and the group must know that account is *yours*. Creating it and not
+    # linking it to the membership is worse than not creating it: the group looks
+    # complete while every personal figure in the client reads zero.
+    response = await api.get("/api/v1/groups", headers=auth(token))
+    created = next(g for g in response.json() if g["id"] == group_id)
+    assert created["owned_account_id"] == me["id"], "the creator's account must be linked to their membership"
+
     # ── 4. Add a participant who has no login ─────────────────────────────────
     response = await api.post(
         f"/api/v1/groups/{group_id}/accounts",

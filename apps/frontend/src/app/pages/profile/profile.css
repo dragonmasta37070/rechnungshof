@@ -42,3 +42,13 @@
     color: var(--text-3);
     font-size: 11px;
 }
+
+/* The Authentik subject is 64 hex characters. Left to itself it forced the row
+   far wider than the phone and pushed the label off screen. */
+.setting .mono {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px;
+    text-align: right;
+}

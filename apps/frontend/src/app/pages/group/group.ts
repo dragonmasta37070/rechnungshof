@@ -1,10 +1,20 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from "@angular/core";
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    effect,
+    ElementRef,
+    inject,
+    input,
+    signal,
+    viewChild,
+} from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { Router } from "@angular/router";
 
 import { Api, type Transaction } from "../../api/api";
 import { balancesFor, settlementFor } from "../../domain/balances";
-import { formatDateLong, toIsoDate } from "../../domain/format";
+import { formatDateLong, plural, toIsoDate } from "../../domain/format";
 import { shareOf } from "../../domain/share";
 import { Store } from "../../domain/store";
 import { Amount } from "../../ui/amount";
@@ -13,9 +23,11 @@ import { Icon } from "../../ui/icon";
 interface ExpenseRow {
     transaction: Transaction;
     payer: string;
-    people: number;
-    /** The signed-in user's own share, or null when they are not involved. */
+    peopleLabel: string;
+    /** The signed-in user's own share, or null when they owe nothing on it. */
     ownShare: number | null;
+    /** True when the signed-in user is the one who paid. */
+    ownPayment: boolean;
 }
 
 interface DateSection {
@@ -44,11 +56,26 @@ export class GroupView {
     protected readonly newPersonName = signal("");
     protected readonly addingPerson = signal(false);
 
+    protected readonly subtitle = computed(
+        () =>
+            `${plural(this.members().length, "Mitglied", "Mitglieder")} · ` +
+            `${plural(this.sections().length, "Tag mit Ausgaben", "Tage mit Ausgaben")}`
+    );
+
+    protected readonly planIntro = computed(
+        () =>
+            `${plural(this.plan().length, "Zahlung gleicht", "Zahlungen gleichen")} diese Gruppe aus — der kürzeste Weg.`
+    );
+
     protected readonly groupId = computed(() => Number(this.id()));
     protected readonly group = computed(() => this.store.groups().find((g) => g.id === this.groupId()) ?? null);
 
+    private readonly personField = viewChild<ElementRef<HTMLInputElement>>("personField");
+
     constructor() {
         effect(() => this.store.activeGroupId.set(this.groupId()));
+        // Same reason as the group sheet: one field, so focus it.
+        effect(() => this.personField()?.nativeElement.focus());
     }
 
     private readonly accounts = computed(() => this.store.accountsOf(this.groupId()));
@@ -122,8 +149,9 @@ export class GroupView {
             rows.push({
                 transaction,
                 payer: nameOf.get(creditorId) ?? "Unbekannt",
-                people: Object.keys(transaction.debitor_shares).length,
+                peopleLabel: plural(Object.keys(transaction.debitor_shares).length, "Person", "Personen"),
                 ownShare: own == null ? null : shareOf(transaction, own),
+                ownPayment: own != null && transaction.creditor_shares[own] != null,
             });
             byDate.set(transaction.billed_at, rows);
         }

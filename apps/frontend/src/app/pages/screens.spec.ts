@@ -152,7 +152,7 @@ describe("screens render", () => {
         expect(rendered).toContain("WG Sonnenweg");
         expect(rendered).toContain("Marco");
         // 60 split two ways: the user's own share is 30.
-        expect(rendered).toContain("30.00");
+        expect(rendered).toContain("30,00");
     });
 
     it("groups list shows members, expenses and the balance", async () => {
@@ -161,7 +161,7 @@ describe("screens render", () => {
         expect(rendered).toContain("WG Sonnenweg");
         expect(rendered).toContain("2 Mitglieder");
         // The user paid 60 and owes 30, so they are owed 30.
-        expect(rendered).toContain("30.00");
+        expect(rendered).toContain("30,00");
         expect(rendered).toContain("bekommst du zurück");
     });
 

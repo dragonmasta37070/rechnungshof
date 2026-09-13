@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject } from "@angular/c
 import { Router } from "@angular/router";
 
 import type { Group, Transaction } from "../../api/api";
-import { formatDateLong } from "../../domain/format";
+import { formatDateLong, plural } from "../../domain/format";
 import { Store } from "../../domain/store";
 import { shareOf } from "../../domain/share";
 import { Amount } from "../../ui/amount";
@@ -12,8 +12,10 @@ interface FeedRow {
     group: Group;
     transaction: Transaction;
     payer: string;
-    /** The signed-in user's own share, or null when they are not involved. */
+    /** The signed-in user's own share, or null when they owe nothing on it. */
     ownShare: number | null;
+    /** True when the signed-in user is the one who paid. */
+    ownPayment: boolean;
 }
 
 interface DateSection {
@@ -54,6 +56,7 @@ export class Expenses {
                 transaction,
                 payer: nameOf.get(creditorId) ?? "Unbekannt",
                 ownShare: own == null ? null : shareOf(transaction, own),
+                ownPayment: own != null && transaction.creditor_shares[own] != null,
             });
             byDate.set(transaction.billed_at, rows);
         }
@@ -82,7 +85,9 @@ export class Expenses {
             ownShare,
             paidByUser,
             count: this.store.allTransactions().length,
-            groups: this.store.groups().length,
+            subtitle:
+                `${plural(this.store.groups().length, "Gruppe", "Gruppen")} · ` +
+                `${plural(this.store.allTransactions().length, "Ausgabe", "Ausgaben")}`,
         };
     });
 
@@ -91,6 +96,10 @@ export class Expenses {
         // so the FAB and the sidebar follow the user where they just went.
         this.store.activeGroupId.set(row.group.id);
         void this.router.navigate(["/groups", row.group.id, "expenses", row.transaction.id]);
+    }
+
+    newGroup(): void {
+        void this.router.navigate(["/groups"]);
     }
 
     newExpense(): void {

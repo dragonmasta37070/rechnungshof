@@ -1,6 +1,6 @@
 <div class="page-title">
     <h1>Ausgaben</h1>
-    <p class="sub">{{ stats().groups }} Gruppen · {{ stats().count }} Ausgaben</p>
+    <p class="sub">{{ stats().subtitle }}</p>
 </div>
 
 <div class="page">
@@ -37,17 +37,19 @@
                     <app-amount
                         [value]="row.transaction.value"
                         [currency]="row.transaction.currency_identifier"
-                        [absolute]="true"
+                        [plain]="true"
                     />
                 </span>
                 <span class="note">
+                    <!-- A settlement you paid has no share for you, but calling that
+                         "nicht beteiligt" on an expense you funded is simply wrong. -->
                     @if (row.ownShare !== null) { Dein Anteil
                     <app-amount
                         [value]="row.ownShare"
                         [currency]="row.transaction.currency_identifier"
-                        [absolute]="true"
+                        [plain]="true"
                     />
-                    } @else { nicht beteiligt }
+                    } @else if (row.ownPayment) { von dir bezahlt } @else { nicht beteiligt }
                 </span>
             </span>
         </button>
@@ -58,6 +60,11 @@
         <app-icon name="receipt" [size]="32" />
         <strong>Noch keine Ausgaben</strong>
         <span>Leg eine Gruppe an und erfasse die erste Ausgabe.</span>
+        <!-- The FAB is hidden while there are no groups, so without this the
+             screen names the next step and offers no way to take it. -->
+        @if (!store.groups().length) {
+        <button type="button" (click)="newGroup()">Gruppe anlegen</button>
+        }
     </div>
     }
 </div>

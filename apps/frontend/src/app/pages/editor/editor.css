@@ -169,6 +169,7 @@
 }
 
 .avatar {
+    text-transform: uppercase;
     display: grid;
     place-items: center;
     flex: none;
@@ -194,6 +195,9 @@
 }
 
 .ghost-sm {
+    min-height: var(--touch-target-min);
+    padding: 0 var(--space-2);
+    margin: calc(var(--space-2) * -1) 0;
     border: 0;
     background: none;
     color: var(--text-2);

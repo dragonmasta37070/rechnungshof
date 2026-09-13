@@ -1,9 +1,19 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from "@angular/core";
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    effect,
+    ElementRef,
+    inject,
+    signal,
+    viewChild,
+} from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { Router, RouterLink } from "@angular/router";
 
 import { Api } from "../../api/api";
 import { balancesFor } from "../../domain/balances";
+import { plural } from "../../domain/format";
 import { Store } from "../../domain/store";
 import { Amount } from "../../ui/amount";
 import { Icon } from "../../ui/icon";
@@ -21,8 +31,18 @@ export class Groups {
     protected readonly store = inject(Store);
 
     protected readonly sheetOpen = signal(false);
+    private readonly nameField = viewChild<ElementRef<HTMLInputElement>>("nameField");
+
+    constructor() {
+        // The sheet has exactly one field. Making the user click it first is a
+        // wasted interaction, and on a phone it costs a tap plus the keyboard.
+        effect(() => this.nameField()?.nativeElement.focus());
+    }
+
     protected readonly newName = signal("");
     protected readonly saving = signal(false);
+
+    protected readonly subtitle = computed(() => plural(this.store.groups().length, "Gruppe", "Gruppen"));
 
     protected readonly rows = computed(() =>
         this.store.groups().map((group) => {
@@ -37,8 +57,16 @@ export class Groups {
             return {
                 group,
                 balance,
-                members: this.store.accountsOf(group.id).filter((a) => a.type === "personal").length,
-                expenses: this.store.transactionsOf(group.id).filter((t) => !t.deleted).length,
+                members: plural(
+                    this.store.accountsOf(group.id).filter((a) => a.type === "personal").length,
+                    "Mitglied",
+                    "Mitglieder"
+                ),
+                expenses: plural(
+                    this.store.transactionsOf(group.id).filter((t) => !t.deleted).length,
+                    "Ausgabe",
+                    "Ausgaben"
+                ),
                 tone: Math.abs(balance) < 0.005 ? "muted" : balance > 0 ? "success" : "error",
                 note: Math.abs(balance) < 0.005 ? "ausgeglichen" : balance > 0 ? "bekommst du zurück" : "schuldest du",
             };

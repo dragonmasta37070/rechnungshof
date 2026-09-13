@@ -1,6 +1,6 @@
 <div class="page-title">
     <h1>Gruppen</h1>
-    <p class="sub">{{ store.groups().length }} Gruppen</p>
+    <p class="sub">{{ subtitle() }}</p>
 </div>
 
 <div class="page">
@@ -11,7 +11,7 @@
             <span class="tile"><app-icon name="groups" /></span>
             <span class="body">
                 <span class="title">{{ row.group.name }}</span>
-                <span class="sub">{{ row.members }} Mitglieder · {{ row.expenses }} Ausgaben</span>
+                <span class="sub">{{ row.members }} · {{ row.expenses }}</span>
             </span>
             <span class="trail">
                 <span class="badge" [class]="row.tone">
@@ -37,14 +37,16 @@
 
 @if (sheetOpen()) {
 <div class="scrim" (click)="sheetOpen.set(false)"></div>
-<div class="sheet" role="dialog" aria-label="Gruppe anlegen">
+<div class="sheet" role="dialog" aria-modal="true" aria-label="Gruppe anlegen" (keydown.escape)="sheetOpen.set(false)">
     <h2>Gruppe anlegen</h2>
     <label for="group-name">Name</label>
     <input
+        #nameField
         id="group-name"
         type="text"
         [ngModel]="newName()"
         (ngModelChange)="newName.set($event)"
+        (keydown.enter)="create()"
         placeholder="z. B. WG Sonnenweg"
         autocomplete="off"
     />

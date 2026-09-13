@@ -5,7 +5,7 @@
     </button>
     <div>
         <h1>{{ g.name }}</h1>
-        <p class="sub">{{ members().length }} Mitglieder · {{ sections().length }} Tage mit Ausgaben</p>
+        <p class="sub">{{ subtitle() }}</p>
     </div>
 </header>
 
@@ -41,7 +41,7 @@
                 </div>
                 <p class="detail">
                     Bezahlt
-                    <app-amount [value]="member.totalPaid" [currency]="g.currency_identifier" [absolute]="true" />
+                    <app-amount [value]="member.totalPaid" [currency]="g.currency_identifier" [plain]="true" />
                     · {{ member.detail }}
                 </p>
             </div>
@@ -50,13 +50,13 @@
             <hr />
             <p class="cap"><span>Ausgleich</span></p>
             @if (plan().length) {
-            <p class="intro">{{ plan().length }} Zahlungen gleichen diese Gruppe aus — der kürzeste Weg.</p>
+            <p class="intro">{{ planIntro() }}</p>
             @for (item of plan(); track item.index) {
             <div class="settle">
                 <div>
                     <p class="settle-title">
                         {{ item.title }}
-                        <app-amount [value]="item.edge.amount" [currency]="g.currency_identifier" [absolute]="true" />
+                        <app-amount [value]="item.edge.amount" [currency]="g.currency_identifier" [plain]="true" />
                     </p>
                     <p class="settle-sub">{{ item.sub }}</p>
                 </div>
@@ -96,14 +96,14 @@
             <span class="tile"><app-icon name="receipt" /></span>
             <span class="body">
                 <span class="title">{{ row.transaction.name }}</span>
-                <span class="sub">Bezahlt von {{ row.payer }} · {{ row.people }} Personen</span>
+                <span class="sub">Bezahlt von {{ row.payer }} · {{ row.peopleLabel }}</span>
             </span>
             <span class="trail">
                 <span class="amount">
                     <app-amount
                         [value]="row.transaction.value"
                         [currency]="row.transaction.currency_identifier"
-                        [absolute]="true"
+                        [plain]="true"
                     />
                 </span>
                 @if (row.ownShare !== null) {
@@ -112,7 +112,7 @@
                     <app-amount
                         [value]="row.ownShare"
                         [currency]="row.transaction.currency_identifier"
-                        [absolute]="true"
+                        [plain]="true"
                     />
                 </span>
                 }
@@ -131,14 +131,22 @@
 
 @if (addPersonOpen()) {
 <div class="scrim" (click)="addPersonOpen.set(false)"></div>
-<div class="sheet" role="dialog" aria-label="Person hinzufügen">
+<div
+    class="sheet"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Person hinzufügen"
+    (keydown.escape)="addPersonOpen.set(false)"
+>
     <h2>Person hinzufügen</h2>
     <label for="person-name">Name</label>
     <input
+        #personField
         id="person-name"
         type="text"
         [ngModel]="newPersonName()"
         (ngModelChange)="newPersonName.set($event)"
+        (keydown.enter)="addPerson()"
         placeholder="z. B. Bob"
         autocomplete="off"
     />

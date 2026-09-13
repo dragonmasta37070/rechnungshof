@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, input, si
 import { FormsModule } from "@angular/forms";
 import { Router } from "@angular/router";
 
-import { Api, type NewTransaction, type SplitMode } from "../../api/api";
+import { Api, type NewTransaction, type SplitMode, type Transaction } from "../../api/api";
 import { currencySymbol, formatDateShort, toIsoDate } from "../../domain/format";
 import { respread, splitEvenly, sumShares, validateSplit } from "../../domain/split";
 import { Store } from "../../domain/store";
@@ -38,6 +38,14 @@ export class Editor {
     protected readonly billedAt = signal(toIsoDate(new Date()));
     protected readonly creditorId = signal<number | null>(null);
     protected readonly splitMode = signal<SplitMode>("shares");
+    /**
+     * The type of the expense being edited.
+     *
+     * The UI has one unified expense, but a settle-up is stored as a `transfer`.
+     * Hardcoding "purchase" on save silently rewrote every settlement you opened
+     * and re-saved into an ordinary expense.
+     */
+    protected readonly type = signal<Transaction["type"]>("purchase");
     protected readonly shares = signal<Record<number, number>>({});
     protected readonly showErrors = signal(false);
     protected readonly saving = signal(false);
@@ -89,9 +97,15 @@ export class Editor {
 
     protected readonly summaryValue = computed(() => {
         const total = this.validation().total;
-        return this.splitMode() === "absolute"
-            ? `${total.toFixed(2)} von ${this.value().toFixed(2)}`
-            : total.toFixed(2);
+        switch (this.splitMode()) {
+            case "absolute":
+                return `${total.toFixed(2)} von ${this.value().toFixed(2)}`;
+            // A share count is a count. "Anteile insgesamt 3.00" reads as money.
+            case "shares":
+                return String(Math.round(total * 100) / 100);
+            case "percent":
+                return `${total.toFixed(2)} %`;
+        }
     });
 
     /** The form is filled from the store once; after that it belongs to the user. */
@@ -127,6 +141,7 @@ export class Editor {
                 this.valueText.set(existing.value.toFixed(2));
                 this.name.set(existing.name);
                 this.billedAt.set(existing.billed_at);
+                this.type.set(existing.type);
                 this.creditorId.set(Number(Object.keys(existing.creditor_shares)[0]));
                 this.splitMode.set(existing.split_mode);
                 this.shares.set(
@@ -238,8 +253,9 @@ export class Editor {
 
         const payload: NewTransaction = {
             // One unified expense type in the UI. A settle-up is the same shape with
-            // an absolute split and a single share, so nothing here special-cases it.
-            type: "purchase",
+            // an absolute split and a single share, so nothing here special-cases
+            // it — but a stored transfer keeps its type through an edit.
+            type: this.type(),
             name: this.name().trim(),
             description: "",
             value: this.value(),

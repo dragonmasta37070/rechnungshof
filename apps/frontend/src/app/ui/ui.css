@@ -111,7 +111,14 @@
     min-width: 0;
 }
 
+/* display: block on the four below is load-bearing, not cosmetic. As inline
+   boxes the title and the subtitle shared one line with no space between them
+   ("GroßeinkaufBezahlt von test1"), and `text-overflow: ellipsis` is ignored on
+   an inline box, so a long expense name pushed the amount off the row instead
+   of truncating. */
+
 .row .title {
+    display: block;
     overflow: hidden;
     font-size: 15px;
     font-weight: 600;
@@ -120,6 +127,7 @@
 }
 
 .row .sub {
+    display: block;
     margin-top: 2px;
     overflow: hidden;
     color: var(--text-3);
@@ -134,11 +142,13 @@
 }
 
 .row .trail .amount {
+    display: block;
     font-size: 15px;
     font-weight: 600;
 }
 
 .row .trail .note {
+    display: block;
     margin-top: 2px;
     color: var(--text-3);
     font-size: 11px;

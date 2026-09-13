@@ -211,6 +211,11 @@
 }
 
 .cap-action {
+    /* --touch-target-min is 44px and this was 16. It is also the only way to
+       get a second person into a group, so it is worth hitting first time. */
+    min-height: var(--touch-target-min);
+    padding: 0 var(--space-2);
+    margin: calc(var(--space-2) * -1) 0;
     border: 0;
     background: none;
     color: var(--text-2);
@@ -233,6 +238,7 @@
 .avatar {
     display: grid;
     place-items: center;
+    text-transform: uppercase;
     flex: none;
     width: 34px;
     height: 34px;

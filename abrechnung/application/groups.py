@@ -49,18 +49,26 @@ class GroupService(Service[Config]):
             add_user_account_on_join,
             user.id,
         )
+        # Create the account before the membership, exactly as join_group does, so
+        # the membership can carry owned_account_id from the start. Creating it
+        # afterwards and dropping the returned id — which is what this did — left
+        # the founder with an account that belonged to nobody: "your balance" was
+        # 0.00 in a group you had just paid for, no expense showed your share, and
+        # the settlement plan could not tell your payments from anyone else's.
+        account_id = None
+        if add_user_account_on_join:
+            account_id = await self._create_user_account(conn=conn, group_id=group_id, user=user)
+
         await conn.execute(
-            "insert into group_membership (user_id, group_id, is_owner, can_write, description) "
-            "values ($1, $2, $3, $4, $5)",
+            "insert into group_membership (user_id, group_id, is_owner, can_write, description, owned_account_id) "
+            "values ($1, $2, $3, $4, $5, $6)",
             user.id,
             group_id,
             True,
             True,
             "group founder",
+            account_id,
         )
-
-        if add_user_account_on_join:
-            await self._create_user_account(conn=conn, group_id=group_id, user=user)
 
         await create_group_log(conn=conn, group_id=group_id, user=user, type="group-created")
         await create_group_log(
