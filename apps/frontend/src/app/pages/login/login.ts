@@ -1,6 +1,6 @@
 import { Component, inject, signal } from "@angular/core";
 import { OidcSecurityService } from "angular-auth-oidc-client";
-import { catchError, defaultIfEmpty, of, take } from "rxjs";
+import { take } from "rxjs";
 
 import { AppConfigService } from "../../core/app-config";
 import { ProviderStatusService } from "../../core/provider-status";
@@ -59,26 +59,20 @@ export class Login {
         this.providerStatus.clearRejected();
         this.unreachable.set(false);
 
-        // `authorize()` returns void and quietly does nothing when the provider's
-        // discovery document could not be fetched — the only trace is a console
-        // line, so the button reads as broken. Asking for the URL first turns
-        // that into something the screen can say: no URL, no provider.
+        // `authorize()` fetches the provider's discovery document itself, but
+        // returns void and swallows the failure — leaving a button that does
+        // nothing at all. Fetching it here first is the same request, with an
+        // error we can put on the screen; `authorize()` then finds the endpoints
+        // already stored and redirects.
+        //
+        // Not getAuthorizeUrl(): that only reads the stored document and never
+        // fetches one, so before the first successful load it always fails.
         this.oidc
-            .getAuthorizeUrl()
-            .pipe(
-                take(1),
-                // defaultIfEmpty, because without the endpoints the observable
-                // completes without ever emitting — and a `next` that never runs
-                // is the silent dead button all over again.
-                defaultIfEmpty(null),
-                catchError(() => of(null))
-            )
-            .subscribe((url) => {
-                if (!url) {
-                    this.unreachable.set(true);
-                    return;
-                }
-                this.oidc.authorize();
+            .preloadAuthWellKnownDocument()
+            .pipe(take(1))
+            .subscribe({
+                next: () => this.oidc.authorize(),
+                error: () => this.unreachable.set(true),
             });
     }
 }

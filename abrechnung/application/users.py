@@ -54,9 +54,17 @@ class UserService(Service[Config]):
 
         email = claims.get("email")
         if not email:
-            # The provider is not releasing the email scope. This is a deployment
-            # problem, not a user problem, so say so plainly in the log.
-            logger.warning("access token for subject %s carries no email claim", subject)
+            # Either the provider is not releasing the email scope, or it is —
+            # and the account simply has no address on it, which arrives as an
+            # empty string rather than a missing claim. Both are deployment
+            # problems, not user problems, so the log distinguishes them.
+            logger.warning(
+                "access token for subject %s has %s — cannot provision the user",
+                subject,
+                "an empty email claim (the account has no email address set)"
+                if "email" in claims
+                else "no email claim at all (the email scope is not being released)",
+            )
             raise Unauthorized("access token is missing the email claim")
 
         user_id = await conn.fetchval("select id from usr where oidc_subject = $1", subject)
