@@ -120,8 +120,9 @@ export class Invite implements OnInit {
     ngOnInit(): void {
         this.api.previewGroup(this.token()).subscribe({
             next: (preview) => this.preview.set(preview),
-            error: (error: unknown) =>
-                this.error.set(apiMessage(error) ?? "Dieser Einladungslink ist ungültig oder abgelaufen."),
+            // The backend's texts here are English and technical, and a malformed
+            // token is refused before it can say anything at all.
+            error: () => this.error.set("Dieser Einladungslink ist ungültig oder abgelaufen."),
         });
     }
 

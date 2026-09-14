@@ -33,6 +33,12 @@ export function oidcConfigLoader(http: HttpClient): StsConfigHttpLoader {
                 // Where the library lands after a successful login. The callback route
                 // overrides this with the remembered deep link when there is one.
                 postLoginRoute: "/",
+                // Without this the library navigates to postLoginRoute itself the
+                // moment the code exchange finishes, before the callback route has
+                // read the remembered deep link — an invite link opened while
+                // logged out always landed on the feed. Leave the routing to the
+                // callback page.
+                triggerAuthorizationResultEvent: true,
                 // 'code' + PKCE (the library always uses S256 for this response type).
                 // There is no client secret in a browser, which is why the Authentik
                 // provider is configured as a public client.

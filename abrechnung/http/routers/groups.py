@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from typing import List
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
 from pydantic import BaseModel
@@ -29,7 +30,9 @@ router = APIRouter(
 
 
 class PreviewGroupPayload(BaseModel):
-    invite_token: str
+    # Tokens are uuid columns. Anything else used to reach the database and
+    # come back as a 500 instead of a rejected request.
+    invite_token: UUID
 
 
 @router.post(
@@ -49,7 +52,7 @@ async def preview_group(
     # every other authenticated call, so there is exactly one way in.
     return await group_service.preview_group(
         user=user,
-        invite_token=payload.invite_token,
+        invite_token=str(payload.invite_token),
     )
 
 
@@ -67,7 +70,7 @@ async def join_group(
 ):
     group_id = await group_service.join_group(
         user=user,
-        invite_token=payload.invite_token,
+        invite_token=str(payload.invite_token),
     )
 
     return await group_service.get_group(user=user, group_id=group_id)
