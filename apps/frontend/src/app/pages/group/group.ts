@@ -13,6 +13,8 @@ import { OwnAccountPicker } from "../../ui/own-account-picker";
 interface ExpenseRow {
     transaction: Transaction;
     payer: string;
+    /** The payer is the signed-in user — the row says "dir" instead of a name. */
+    payerIsOwn: boolean;
     peopleLabel: string;
     /**
      * What this expense does to the signed-in user's balance — positive if they
@@ -63,6 +65,13 @@ export class GroupView {
 
     constructor() {
         effect(() => this.store.activeGroupId.set(this.groupId()));
+        // Only the membership list knows which people have a login. Not while
+        // unlinked: the account picker shown instead of the panel loads it too.
+        effect(() => {
+            if (this.linked()) {
+                this.store.loadMembers(this.groupId());
+            }
+        });
     }
 
     private readonly accounts = computed(() => this.store.accountsOf(this.groupId()));
@@ -74,25 +83,29 @@ export class GroupView {
         const own = this.group()?.owned_account_id ?? null;
         const max = Math.max(...balances.map((b) => Math.abs(b.balance)), 1);
 
-        return balances
-            .filter((b) => nameOf.has(b.accountId))
-            .map((b) => ({
-                id: b.accountId,
-                name: nameOf.get(b.accountId)!,
-                isOwn: b.accountId === own,
-                balance: b.balance,
-                totalPaid: b.totalPaid,
-                // Minimum 3% so a tiny balance is still a visible bar, not a hairline.
-                width: Math.max(3, (Math.abs(b.balance) / max) * 100),
-                tone: Math.abs(b.balance) < 0.005 ? "muted" : b.balance > 0 ? "success" : "error",
-                detail:
-                    Math.abs(b.balance) < 0.005
-                        ? "ausgeglichen"
-                        : b.balance > 0
-                          ? "bekommt Geld zurück"
-                          : "schuldet der Gruppe",
-            }))
-            .toSorted((a, b) => a.name.localeCompare(b.name));
+        return (
+            balances
+                .filter((b) => nameOf.has(b.accountId))
+                .map((b) => ({
+                    id: b.accountId,
+                    name: nameOf.get(b.accountId)!,
+                    isOwn: b.accountId === own,
+                    noLogin: this.store.lacksLogin(this.groupId(), b.accountId),
+                    balance: b.balance,
+                    totalPaid: b.totalPaid,
+                    // Minimum 3% so a tiny balance is still a visible bar, not a hairline.
+                    width: Math.max(3, (Math.abs(b.balance) / max) * 100),
+                    tone: Math.abs(b.balance) < 0.005 ? "muted" : b.balance > 0 ? "success" : "error",
+                    detail:
+                        Math.abs(b.balance) < 0.005
+                            ? "ausgeglichen"
+                            : b.balance > 0
+                              ? "bekommt Geld zurück"
+                              : "schuldet der Gruppe",
+                }))
+                // Your own row first — it is the one the user came for.
+                .toSorted((a, b) => Number(b.isOwn) - Number(a.isOwn) || a.name.localeCompare(b.name))
+        );
     });
 
     protected readonly ownBalance = computed(() => {
@@ -112,17 +125,31 @@ export class GroupView {
         const nameOf = new Map(this.accounts().map((a) => [a.id, a.name]));
         const own = this.group()?.owned_account_id ?? null;
 
-        return settlementFor(this.accounts(), this.transactions()).map((edge, index) => ({
-            index,
-            edge,
-            title: `${nameOf.get(edge.debitorId) ?? "?"} zahlt ${nameOf.get(edge.creditorId) ?? "?"} `,
-            sub:
-                edge.debitorId === own
-                    ? "Deine Zahlung"
-                    : edge.creditorId === own
-                      ? "Du erhältst diesen Betrag"
-                      : "Zahlung zwischen anderen",
-        }));
+        return (
+            settlementFor(this.accounts(), this.transactions())
+                .map((edge) => ({
+                    edge,
+                    // "Du zahlst Carol" / "test1 zahlt dir": the user reads their
+                    // own line as a sentence about them, not as two strangers.
+                    debitor: edge.debitorId === own ? "Du" : (nameOf.get(edge.debitorId) ?? "?"),
+                    debitorIsOwn: edge.debitorId === own,
+                    debitorNoLogin: this.store.lacksLogin(this.groupId(), edge.debitorId),
+                    verb: edge.debitorId === own ? "zahlst" : "zahlt",
+                    creditor: edge.creditorId === own ? "dir" : (nameOf.get(edge.creditorId) ?? "?"),
+                    creditorIsOwn: edge.creditorId === own,
+                    creditorNoLogin: this.store.lacksLogin(this.groupId(), edge.creditorId),
+                    involvesOwn: edge.debitorId === own || edge.creditorId === own,
+                    sub:
+                        edge.debitorId === own
+                            ? "Deine Zahlung"
+                            : edge.creditorId === own
+                              ? "Du erhältst diesen Betrag"
+                              : "Zahlung zwischen anderen",
+                }))
+                // Rows you are part of first; `settle()` addresses this list by
+                // position, so the template passes `$index` rather than a field.
+                .toSorted((a, b) => Number(b.involvesOwn) - Number(a.involvesOwn))
+        );
     });
 
     protected readonly sections = computed<DateSection[]>(() => {
@@ -136,6 +163,7 @@ export class GroupView {
             rows.push({
                 transaction,
                 payer: nameOf.get(creditorId) ?? "Unbekannt",
+                payerIsOwn: creditorId === own,
                 peopleLabel: plural(Object.keys(transaction.debitor_shares).length, "Person", "Personen"),
                 effect: own == null ? null : effectOf(transaction, own),
             });

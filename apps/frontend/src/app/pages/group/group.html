@@ -39,7 +39,10 @@
             @for (member of members(); track member.id) {
             <div class="member">
                 <div class="member-head">
-                    <span class="name">{{ member.name }} @if (member.isOwn) { (du) } </span>
+                    <span class="name">
+                        <span [class.you]="member.isOwn">{{ member.name }}@if (member.isOwn) { (du) }</span>
+                        @if (member.noLogin) { <span class="tag">kein Login</span> }
+                    </span>
                     <span class="badge" [class]="member.tone">
                         <app-amount [value]="member.balance" [currency]="g.currency_identifier" [absolute]="true" />
                     </span>
@@ -59,16 +62,22 @@
             <p class="cap"><span>Ausgleich</span></p>
             @if (plan().length) {
             <p class="intro">{{ planIntro() }}</p>
-            @for (item of plan(); track item.index) {
+            @for (item of plan(); track $index) {
             <div class="settle">
                 <div>
                     <p class="settle-title">
-                        {{ item.title }}
-                        <app-amount [value]="item.edge.amount" [currency]="g.currency_identifier" [plain]="true" />
+                        <span [class.you]="item.debitorIsOwn">{{ item.debitor }}</span>
+                        @if (item.debitorNoLogin) { <span class="tag">kein Login</span> } {{ item.verb }}
+                        <span [class.you]="item.creditorIsOwn">{{ item.creditor }}</span>
+                        @if (item.creditorNoLogin) { <span class="tag">kein Login</span> }&ngsp;<app-amount
+                            [value]="item.edge.amount"
+                            [currency]="g.currency_identifier"
+                            [plain]="true"
+                        />
                     </p>
                     <p class="settle-sub">{{ item.sub }}</p>
                 </div>
-                <button type="button" (click)="settle(item.index)" [disabled]="settling() !== null">Ausgleichen</button>
+                <button type="button" (click)="settle($index)" [disabled]="settling() !== null">Ausgleichen</button>
             </div>
             } } @else {
             <p class="intro">Diese Gruppe ist ausgeglichen.</p>
@@ -85,7 +94,10 @@
             <span class="tile"><app-icon name="receipt" /></span>
             <span class="body">
                 <span class="title">{{ row.transaction.name }}</span>
-                <span class="sub">Bezahlt von {{ row.payer }} · {{ row.peopleLabel }}</span>
+                <span class="sub"
+                    >Bezahlt von @if (row.payerIsOwn) { <span class="you">dir</span> } @else { {{ row.payer }} } · {{
+                    row.peopleLabel }}</span
+                >
             </span>
             <span class="trail">
                 <span class="amount">

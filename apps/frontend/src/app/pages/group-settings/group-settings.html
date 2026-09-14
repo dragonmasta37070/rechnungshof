@@ -34,7 +34,7 @@
         <div class="row static">
             <span class="avatar">{{ row.member.username.charAt(0) }}</span>
             <span class="body">
-                <span class="title">{{ row.member.username }}@if (row.isMe) { (du) }</span>
+                <span class="title" [class.you]="row.isMe">{{ row.member.username }}@if (row.isMe) { (du) }</span>
                 <span class="sub">
                     {{ row.role }}@if (row.accountName) { · {{ row.accountName }} } @else { · kein Konto zugeordnet }
                 </span>

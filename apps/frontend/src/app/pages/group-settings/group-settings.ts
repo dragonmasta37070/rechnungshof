@@ -85,12 +85,17 @@ export class GroupSettings implements OnInit {
     protected readonly memberRows = computed(() => {
         const me = this.store.profile()?.id;
         const nameOf = new Map(this.accounts().map((a) => [a.id, a.name]));
-        return this.members().map((member) => ({
-            member,
-            isMe: member.user_id === me,
-            role: member.is_owner ? "Besitzer" : member.can_write ? "kann bearbeiten" : "nur lesen",
-            accountName: member.owned_account_id == null ? null : (nameOf.get(member.owned_account_id) ?? null),
-        }));
+        return (
+            this.members()
+                .map((member) => ({
+                    member,
+                    isMe: member.user_id === me,
+                    role: member.is_owner ? "Besitzer" : member.can_write ? "kann bearbeiten" : "nur lesen",
+                    accountName: member.owned_account_id == null ? null : (nameOf.get(member.owned_account_id) ?? null),
+                }))
+                // Your own row first — it is the one the user came for.
+                .toSorted((a, b) => Number(b.isMe) - Number(a.isMe))
+        );
     });
 
     /** Invites addressed to a person, as opposed to a shareable link. */

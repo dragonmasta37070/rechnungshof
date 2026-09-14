@@ -23,6 +23,19 @@ from abrechnung.domain.groups import (
 from abrechnung.domain.users import User
 from abrechnung.util import timed_cache
 
+# The same question delete_account asks before it lets an account go: is this
+# account referenced by any transaction (creditor/debitor share), by any
+# purchase item usage, or by a clearing account? `{acc}` is a column reference,
+# never user input.
+_ACCOUNT_IS_USED = (
+    "(exists (select from transaction_state_valid_at() used_t"
+    "     where not used_t.deleted and {acc} = any(used_t.involved_accounts))"
+    " or exists (select from transaction_position_state_valid_at() used_p"
+    "     where not used_p.deleted and {acc} = any(used_p.involved_accounts))"
+    " or exists (select from account_state_valid_at() used_c"
+    "     where not used_c.deleted and {acc} = any(used_c.involved_accounts)))"
+)
+
 
 class GroupService(Service[Config]):
     @with_db_transaction
@@ -246,7 +259,23 @@ class GroupService(Service[Config]):
 
         account_id = None
         if group["add_user_account_on_join"]:
-            account_id = await self._create_user_account(conn=conn, group_id=group["id"], user=user)
+            # The group has almost always been keeping a placeholder person for
+            # the newcomer already, and every expense is split with it. Creating
+            # a second account of the same name here is what left people with
+            # "your balance 0,00 €" next to their own name.
+            adoptable = await conn.fetch(
+                "select a.account_id from account_state_valid_at() a "
+                "where a.group_id = $1 and a.type = 'personal' and not a.deleted "
+                "    and lower(a.name) = lower($2) "
+                "    and not exists (select from group_membership gm "
+                "        where gm.group_id = a.group_id and gm.owned_account_id = a.account_id)",
+                group["id"],
+                user.username,
+            )
+            if len(adoptable) == 1:
+                account_id = adoptable[0]["account_id"]
+            else:
+                account_id = await self._create_user_account(conn=conn, group_id=group["id"], user=user)
 
         await conn.execute(
             "insert into group_membership (user_id, group_id, invited_by, can_write, is_owner, owned_account_id) "
@@ -300,6 +329,67 @@ class GroupService(Service[Config]):
             "where gm.user_id = $1 and gm.group_id = c.group_id and gm.owned_account_id is null",
             user.id,
         )
+        await GroupService._adopt_placeholder_accounts(conn=conn, user=user)
+
+    @staticmethod
+    async def _adopt_placeholder_accounts(conn: Connection, user: User):
+        """Heals the joins that created a second "you" beside the placeholder the group was already using.
+
+        Before join_group learned to adopt a matching placeholder it made a
+        fresh account for every joining user, so the group ended up with two
+        people of the same name: the one every expense is split with, and the
+        brand new empty one the membership points at. Whenever the owned account
+        is still untouched and exactly one same-named free account carries the
+        actual expenses, the membership moves over and the empty duplicate is
+        deleted the way delete_account deletes one.
+        """
+        rows = await conn.fetch(
+            "select o.group_id, o.account_id as empty_account_id, o.revision_id, o.name, "
+            "    min(ph.account_id) as target_account_id "
+            "from ("
+            "    select gm.group_id, a.account_id, a.revision_id, a.name"
+            "    from group_membership gm"
+            "        join account_state_valid_at() a on a.account_id = gm.owned_account_id"
+            "    where gm.user_id = $1 and a.type = 'personal' and not a.deleted"
+            "        and not " + _ACCOUNT_IS_USED.format(acc="a.account_id") + ""
+            ") o "
+            "    join account_state_valid_at() ph on ph.group_id = o.group_id and ph.type = 'personal'"
+            "        and not ph.deleted and ph.account_id != o.account_id and lower(ph.name) = lower(o.name) "
+            "where not exists (select from group_membership gm2"
+            "        where gm2.group_id = ph.group_id and gm2.owned_account_id = ph.account_id)"
+            "    and " + _ACCOUNT_IS_USED.format(acc="ph.account_id") + " "
+            "group by o.group_id, o.account_id, o.revision_id, o.name "
+            "having count(*) = 1",
+            user.id,
+        )
+        for row in rows:
+            await conn.execute(
+                "update group_membership set owned_account_id = $3 where user_id = $1 and group_id = $2",
+                user.id,
+                row["group_id"],
+                row["target_account_id"],
+            )
+            revision_id = await conn.fetchval(
+                "insert into account_revision (user_id, account_id, created_at) values ($1, $2, null) returning id",
+                user.id,
+                row["empty_account_id"],
+            )
+            await conn.execute(
+                "insert into account_history (id, revision_id, name, description, date_info, deleted) "
+                "select $1, $2, name, description, date_info, true "
+                "from account_history ah where ah.id = $1 and ah.revision_id = $3",
+                row["empty_account_id"],
+                revision_id,
+                row["revision_id"],
+            )
+            await create_group_log(
+                conn=conn,
+                group_id=row["group_id"],
+                user=user,
+                type="account-deleted",
+                message=f"deleted duplicate account {row['name']}",
+            )
+            await conn.execute("update account_revision set created_at = now() where id = $1", revision_id)
 
     @with_db_transaction
     async def list_groups(self, *, conn: Connection, user: User) -> list[Group]:

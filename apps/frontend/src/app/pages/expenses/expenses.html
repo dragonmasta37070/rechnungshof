@@ -30,7 +30,10 @@
             <span class="tile"><app-icon name="receipt" /></span>
             <span class="body">
                 <span class="title">{{ row.transaction.name }}</span>
-                <span class="sub">{{ row.group.name }} · Bezahlt von {{ row.payer }}</span>
+                <span class="sub"
+                    >{{ row.group.name }} · Bezahlt von @if (row.payerIsOwn) { <span class="you">dir</span> } @else { {{
+                    row.payer }} }</span
+                >
             </span>
             <span class="trail">
                 <span class="amount">

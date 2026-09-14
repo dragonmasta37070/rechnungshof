@@ -12,6 +12,8 @@ interface FeedRow {
     group: Group;
     transaction: Transaction;
     payer: string;
+    /** The payer is the signed-in user — the row says "dir" instead of a name. */
+    payerIsOwn: boolean;
     /**
      * What this expense does to the signed-in user's balance — positive if they
      * get money back from it. Null when they have no part in it.
@@ -58,6 +60,7 @@ export class Expenses {
                 group,
                 transaction,
                 payer: nameOf.get(creditorId) ?? "Unbekannt",
+                payerIsOwn: creditorId === own,
                 effect: own == null ? null : effectOf(transaction, own),
                 ownShare: own == null ? null : shareOf(transaction, own),
             });

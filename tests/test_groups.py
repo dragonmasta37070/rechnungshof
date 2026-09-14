@@ -11,7 +11,7 @@ from abrechnung.domain.accounts import AccountType, NewAccount
 from abrechnung.domain.groups import Group, GroupInvite, GroupPreview
 from abrechnung.domain.users import User
 
-from .conftest import CreateTestUser
+from .conftest import CreateTestPurchase, CreateTestUser
 
 
 async def test_basic_invites(
@@ -299,3 +299,122 @@ async def test_list_groups_leaves_an_ambiguous_group_alone(
     )
 
     assert await _owned_account_id(group_service, dummy_user, dummy_group.id) is None
+
+
+async def _group_with_accounts_on_join(group_service: GroupService, user: User) -> int:
+    return await group_service.create_group(
+        user=user,
+        name=secrets.token_hex(16),
+        description="description",
+        currency_identifier="EUR",
+        terms="terms",
+        add_user_account_on_join=True,
+    )
+
+
+async def _join(group_service: GroupService, inviter: User, group_id: int, joining: User):
+    invite_id = await group_service.create_invite(
+        user=inviter,
+        group_id=group_id,
+        description="",
+        single_use=False,
+        join_as_editor=True,
+        valid_until=None,
+    )
+    invite = await group_service.get_invite(user=inviter, group_id=group_id, invite_id=invite_id)
+    await group_service.join_group(user=joining, invite_token=invite.token)
+
+
+async def test_join_adopts_the_placeholder_named_like_you(
+    group_service: GroupService,
+    account_service: AccountService,
+    dummy_user: User,
+    create_test_user: CreateTestUser,
+):
+    group_id = await _group_with_accounts_on_join(group_service, dummy_user)
+    joining = await create_test_user()
+    placeholder_id = await _add_person(account_service, group_id, dummy_user, joining.username.upper())
+
+    await _join(group_service, dummy_user, group_id, joining)
+
+    member = await group_service.get_member(user=joining, group_id=group_id, member_id=joining.id)
+    assert member.owned_account_id == placeholder_id
+    # No second "you" was created next to the placeholder.
+    accounts = await account_service.list_accounts(user=joining, group_id=group_id)
+    assert [a.id for a in accounts if a.name.lower() == joining.username.lower()] == [placeholder_id]
+
+
+async def test_join_without_a_placeholder_still_creates_an_account(
+    group_service: GroupService,
+    account_service: AccountService,
+    dummy_user: User,
+    create_test_user: CreateTestUser,
+):
+    group_id = await _group_with_accounts_on_join(group_service, dummy_user)
+    joining = await create_test_user()
+    await _add_person(account_service, group_id, dummy_user, "somebody else")
+
+    await _join(group_service, dummy_user, group_id, joining)
+
+    member = await group_service.get_member(user=joining, group_id=group_id, member_id=joining.id)
+    assert member.owned_account_id is not None
+    account = await account_service.get_account(user=joining, group_id=group_id, account_id=member.owned_account_id)
+    assert account.name == joining.username
+
+
+async def test_list_groups_adopts_the_placeholder_and_deletes_the_empty_duplicate(
+    group_service: GroupService,
+    account_service: AccountService,
+    create_test_purchase: CreateTestPurchase,
+    dummy_user: User,
+    create_test_user: CreateTestUser,
+):
+    group_id = await _group_with_accounts_on_join(group_service, dummy_user)
+    joining = await create_test_user()
+    # The state the old join_group left behind: an empty account of your own
+    # name, while the group splits everything with a placeholder of that name.
+    await _join(group_service, dummy_user, group_id, joining)
+    empty_account_id = await _owned_account_id(group_service, joining, group_id)
+    assert empty_account_id is not None
+    placeholder_id = await _add_person(account_service, group_id, dummy_user, joining.username.upper())
+    owner_account_id = await _owned_account_id(group_service, dummy_user, group_id)
+    assert owner_account_id is not None
+    await create_test_purchase(
+        group_id=group_id,
+        value=10.0,
+        creditor_id=owner_account_id,
+        debitor_shares={placeholder_id: 1.0},
+    )
+
+    assert await _owned_account_id(group_service, joining, group_id) == placeholder_id
+    deleted = await account_service.get_account(user=joining, group_id=group_id, account_id=empty_account_id)
+    assert deleted.deleted
+    # Idempotent: a second run finds nothing left to do.
+    assert await _owned_account_id(group_service, joining, group_id) == placeholder_id
+
+
+async def test_list_groups_keeps_an_owned_account_that_has_transactions(
+    group_service: GroupService,
+    account_service: AccountService,
+    create_test_purchase: CreateTestPurchase,
+    dummy_user: User,
+    create_test_user: CreateTestUser,
+):
+    group_id = await _group_with_accounts_on_join(group_service, dummy_user)
+    joining = await create_test_user()
+    await _join(group_service, dummy_user, group_id, joining)
+    owned_account_id = await _owned_account_id(group_service, joining, group_id)
+    assert owned_account_id is not None
+    placeholder_id = await _add_person(account_service, group_id, dummy_user, joining.username)
+    owner_account_id = await _owned_account_id(group_service, dummy_user, group_id)
+    assert owner_account_id is not None
+    await create_test_purchase(
+        group_id=group_id,
+        value=10.0,
+        creditor_id=owner_account_id,
+        debitor_shares={placeholder_id: 1.0, owned_account_id: 1.0},
+    )
+
+    assert await _owned_account_id(group_service, joining, group_id) == owned_account_id
+    account = await account_service.get_account(user=joining, group_id=group_id, account_id=owned_account_id)
+    assert not account.deleted

@@ -43,6 +43,37 @@ export class Store {
     /** The group currently being viewed, for the desktop sidebar and the FAB. */
     readonly activeGroupId = signal<number | null>(null);
 
+    /**
+     * The accounts a login owns, per group — everything else is a placeholder.
+     *
+     * `owned_account_id` lives on the membership, so the accounts alone cannot
+     * say who has a login. Loaded on demand by the screens that show people,
+     * once per group.
+     */
+    readonly memberAccounts = signal<Record<number, Set<number>>>({});
+    private readonly memberLoads = new Set<number>();
+
+    loadMembers(groupId: number): void {
+        if (this.memberLoads.has(groupId)) {
+            return;
+        }
+        this.memberLoads.add(groupId);
+        this.api.members(groupId).subscribe({
+            next: (members) =>
+                this.memberAccounts.update((current) => ({
+                    ...current,
+                    [groupId]: new Set(members.map((m) => m.owned_account_id).filter((id): id is number => id != null)),
+                })),
+            error: () => this.memberLoads.delete(groupId),
+        });
+    }
+
+    /** A person nobody signs in as. False until the members are actually known. */
+    lacksLogin(groupId: number, accountId: number): boolean {
+        const owned = this.memberAccounts()[groupId];
+        return owned != null && !owned.has(accountId);
+    }
+
     readonly activeGroup = computed(() => this.groups().find((g) => g.id === this.activeGroupId()) ?? null);
 
     accountsOf(groupId: number): AccountLike[] {

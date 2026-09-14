@@ -87,6 +87,18 @@ export class Editor {
         return account.id === own ? `${account.name} (du)` : account.name;
     });
 
+    /** The account representing the signed-in user, highlighted wherever it appears. */
+    isOwn(accountId: number): boolean {
+        return accountId === this.group()?.owned_account_id;
+    }
+
+    /** A person nobody signs in as — a placeholder somebody typed. */
+    lacksLogin(accountId: number): boolean {
+        return this.store.lacksLogin(this.gid(), accountId);
+    }
+
+    protected readonly creditorIsOwn = computed(() => this.creditorId() != null && this.isOwn(this.creditorId()!));
+
     protected readonly dateLabel = computed(() => formatDateShort(this.billedAt()));
 
     protected readonly participants = computed(() =>
@@ -130,6 +142,9 @@ export class Editor {
     private filled = false;
 
     constructor() {
+        // Who has a login lives on the memberships, not on the accounts.
+        effect(() => this.store.loadMembers(this.gid()));
+
         // This route sits outside the shell, and the shell is what loads the
         // store — so on a reload while editing, or on a link opened directly,
         // nothing would ever fetch the group, its people or the expense.

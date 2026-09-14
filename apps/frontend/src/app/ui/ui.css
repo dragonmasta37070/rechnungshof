@@ -252,3 +252,26 @@
         bottom: var(--space-6);
     }
 }
+
+/*
+ * Who you are, everywhere a person is named. Two identically named people in a
+ * group are indistinguishable otherwise, and "your" row is the one the user
+ * came for — so it is coloured, and it sorts first.
+ */
+.you {
+    color: var(--accent);
+    font-weight: 600;
+}
+
+/* A person nobody signs in as: a placeholder somebody typed. */
+.tag {
+    display: inline-block;
+    margin-left: var(--space-2);
+    padding: 1px 6px;
+    border-radius: var(--radius-pill);
+    background: var(--elevated);
+    color: var(--text-3);
+    font-size: 10px;
+    font-weight: 500;
+    vertical-align: middle;
+}

@@ -164,7 +164,8 @@ describe("screens render", () => {
         const rendered = text(fixture);
         expect(rendered).toContain("Ausgabe 10");
         expect(rendered).toContain("WG Sonnenweg");
-        expect(rendered).toContain("Marco");
+        // The user paid it themselves, and the row says so as a pronoun.
+        expect(rendered).toContain("Bezahlt von dir");
         // 60 split two ways: the user's own share is 30.
         expect(rendered).toContain("30,00");
     });
@@ -195,8 +196,12 @@ describe("screens render", () => {
         const rendered = text(fixture);
         expect(rendered).toContain("Bob");
         expect(rendered).toContain("Ausgleich");
-        // Bob owes Marco 30 — the settlement must name the payer first.
-        expect(rendered).toContain("Bob zahlt Marco");
+        // Bob owes Marco 30 — the settlement names the payer first, and the
+        // user is "dir" rather than a second name to match against their own.
+        expect(rendered).toContain("Bob zahlt dir");
+        // The own row comes first in the panel, marked as the user's.
+        expect(rendered).toContain("Marco (du)");
+        expect(rendered.indexOf("Marco (du)")).toBeLessThan(rendered.indexOf("Bob"));
     });
 
     it("balances screen nets by group and by person", async () => {
@@ -304,6 +309,31 @@ describe("expense editor", () => {
 
 describe("group view", () => {
     afterEach(() => TestBed.resetTestingModule());
+
+    it("marks the people without a login once the memberships are known", async () => {
+        const fixture = await setup<GroupView>(GroupView, { id: "1" });
+        (fixture.componentInstance as unknown as { panelOpen: { set(v: boolean): void } }).panelOpen.set(true);
+        // Only the membership list says who has a login; Bob has none.
+        TestBed.inject(HttpTestingController)
+            .expectOne("/api/v1/groups/1/members")
+            .flush([
+                {
+                    user_id: 1,
+                    username: "marco",
+                    is_owner: true,
+                    can_write: true,
+                    description: "",
+                    joined_at: "",
+                    invited_by: null,
+                    owned_account_id: ME.id,
+                },
+            ]);
+        await fixture.whenStable();
+
+        const rendered = text(fixture);
+        expect(rendered).toContain("kein Login");
+        expect(rendered.indexOf("kein Login")).toBeGreaterThan(rendered.indexOf("Bob"));
+    });
 
     it("says a group it cannot find is missing rather than loading forever", async () => {
         const fixture = await setup<GroupView>(GroupView, { id: "999" });
