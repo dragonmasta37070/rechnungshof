@@ -192,3 +192,18 @@
         display: none;
     }
 }
+
+/* Unanswered invites: the group list is where they are accepted, so the count
+   sits on the way there. */
+.count {
+    display: inline-block;
+    min-width: 16px;
+    padding: 0 5px;
+    border-radius: var(--radius-pill);
+    background: var(--accent);
+    color: var(--on-accent);
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 16px;
+    text-align: center;
+}

@@ -1,0 +1,208 @@
+@if (group(); as g) {
+<header class="head">
+    <button type="button" class="back" (click)="back()" [attr.aria-label]="'Zurück zu ' + g.name">
+        <app-icon name="chevron-left" [size]="20" />
+    </button>
+    <div class="head-body">
+        <h1>Einstellungen</h1>
+        <p class="sub">{{ g.name }}</p>
+    </div>
+</header>
+
+<div class="page">
+    <p class="cap">
+        <span>Dein Konto</span>
+        @if (ownAccountName() && !chooserOpen()) {
+        <button type="button" class="cap-action" (click)="chooserOpen.set(true)">ändern</button>
+        }
+    </p>
+
+    @if (ownAccountName(); as name) {
+    <div class="list">
+        <div class="row static">
+            <span class="avatar">{{ name.charAt(0) }}</span>
+            <span class="body"><span class="title">Du bist: {{ name }}</span></span>
+        </div>
+    </div>
+    } @else {
+    <p class="hint">
+        Du bist noch keiner Person in dieser Gruppe zugeordnet, deshalb kann dein Saldo nicht berechnet werden.
+    </p>
+    } @if (!ownAccountName() || chooserOpen()) {
+    <div class="list">
+        @for (account of freeAccounts(); track account.id) {
+        <button
+            class="row"
+            type="button"
+            [class.suggested]="account.id === suggestedAccountId()"
+            [disabled]="linking()"
+            (click)="claim(account.id)"
+        >
+            <span class="avatar">{{ account.name.charAt(0) }}</span>
+            <span class="body">
+                <span class="title">{{ account.name }}</span>
+                @if (account.id === suggestedAccountId()) {
+                <span class="sub">Gleicher Name wie dein Login</span>
+                }
+            </span>
+            <span class="trail"><span class="note">Das bin ich</span></span>
+        </button>
+        } @empty {
+        <div class="row static">
+            <span class="body">
+                <span class="sub">Keine freie Person — lege unten eine an oder lass dich zuordnen.</span>
+            </span>
+        </div>
+        }
+    </div>
+    }
+
+    <p class="cap"><span>Mitglieder</span><span>{{ memberRows().length }}</span></p>
+    <div class="list">
+        @for (row of memberRows(); track row.member.user_id) {
+        <div class="row static">
+            <span class="avatar">{{ row.member.username.charAt(0) }}</span>
+            <span class="body">
+                <span class="title">{{ row.member.username }}@if (row.isMe) { (du) }</span>
+                <span class="sub">
+                    {{ row.role }}@if (row.accountName) { · {{ row.accountName }} } @else { · kein Konto zugeordnet }
+                </span>
+            </span>
+        </div>
+        }
+    </div>
+
+    @if (pendingInvites().length) {
+    <p class="cap"><span>Ausstehende Einladungen</span></p>
+    <div class="list">
+        @for (invite of pendingInvites(); track invite.id) {
+        <div class="row static">
+            <span class="avatar">{{ invite.invited_username!.charAt(0) }}</span>
+            <span class="body">
+                <span class="title">{{ invite.invited_username }}</span>
+                <span class="sub">eingeladen</span>
+            </span>
+            @if (g.can_write) {
+            <span class="trail">
+                <button type="button" class="cap-action" (click)="withdraw(invite.id)">Zurückziehen</button>
+            </span>
+            }
+        </div>
+        }
+    </div>
+    }
+
+    <p class="cap">
+        <span>Personen ohne Login</span>
+        <button type="button" class="cap-action" (click)="openAddPerson()">Person hinzufügen</button>
+    </p>
+    <div class="list">
+        @for (account of freeAccounts(); track account.id) {
+        <div class="row static">
+            <span class="avatar">{{ account.name.charAt(0) }}</span>
+            <span class="body">
+                <span class="title">{{ account.name }}</span>
+                <span class="sub">kein eigener Login</span>
+            </span>
+        </div>
+        } @empty {
+        <div class="row static">
+            <span class="body"><span class="sub">Alle Personen gehören zu einem Login.</span></span>
+        </div>
+        }
+    </div>
+
+    @if (g.can_write) {
+    <p class="cap"><span>Einladen</span></p>
+    <div class="invite-form">
+        <label for="invite-username">Benutzername</label>
+        <div class="invite-row">
+            <input
+                id="invite-username"
+                type="text"
+                [ngModel]="username()"
+                (ngModelChange)="username.set($event)"
+                (keydown.enter)="invite()"
+                placeholder="z. B. test1"
+                autocomplete="off"
+            />
+            <button type="button" class="primary" [disabled]="!username().trim() || inviting()" (click)="invite()">
+                Einladen
+            </button>
+        </div>
+        @if (inviteError(); as error) {
+        <p class="error" role="alert">{{ error }}</p>
+        }
+        <p class="hint">
+            Die eingeladene Person muss die Einladung annehmen, bevor sie Mitglied wird.
+            <button type="button" class="cap-action" (click)="openLink()">Einladungslink</button>
+        </p>
+    </div>
+    }
+</div>
+
+@if (addPersonOpen()) {
+<div class="scrim" (click)="addPersonOpen.set(false)"></div>
+<div
+    class="sheet"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Person hinzufügen"
+    (keydown.escape)="addPersonOpen.set(false)"
+>
+    <h2>Person hinzufügen</h2>
+    <label for="person-name">Name</label>
+    <input
+        #personField
+        id="person-name"
+        type="text"
+        [ngModel]="newPersonName()"
+        (ngModelChange)="newPersonName.set($event)"
+        (keydown.enter)="addPerson()"
+        placeholder="z. B. Bob"
+        autocomplete="off"
+    />
+    <p class="hint">
+        Diese Person braucht kein eigenes Konto. Wer sich selbst anmelden kann, kommt besser über „Einladen“ in die
+        Gruppe.
+    </p>
+    <div class="actions">
+        <button type="button" class="ghost" (click)="addPersonOpen.set(false)">Abbrechen</button>
+        <button
+            type="button"
+            class="primary"
+            [disabled]="!newPersonName().trim() || addingPerson()"
+            (click)="addPerson()"
+        >
+            Hinzufügen
+        </button>
+    </div>
+</div>
+} @if (linkOpen()) {
+<div class="scrim" (click)="linkOpen.set(false)"></div>
+<div class="sheet" role="dialog" aria-modal="true" aria-label="Einladungslink" (keydown.escape)="linkOpen.set(false)">
+    <h2>Einladungslink</h2>
+    @if (inviteLink(); as link) {
+    <p class="hint">Wer diesen Link öffnet und sich anmeldet, wird Mitglied von {{ g.name }}.</p>
+    <p class="link" #linkField>{{ link }}</p>
+    <div class="actions">
+        <button type="button" class="ghost" (click)="linkOpen.set(false)">Schließen</button>
+        <button type="button" class="primary" (click)="copyLink()">{{ copied() ? 'Kopiert' : 'Link kopieren' }}</button>
+        @if (canShare) {
+        <button type="button" class="primary" (click)="shareLink()">Teilen</button>
+        }
+    </div>
+    } @else {
+    <p class="hint">Einladungslink wird vorbereitet …</p>
+    }
+</div>
+} } @else if (store.loading()) {
+<p class="loading">Gruppe wird geladen …</p>
+} @else {
+<div class="empty">
+    <app-icon name="groups" [size]="32" />
+    <strong>Gruppe nicht gefunden</strong>
+    <span>Sie wurde gelöscht, oder du bist kein Mitglied.</span>
+    <button type="button" (click)="back()">Zu den Gruppen</button>
+</div>
+}
