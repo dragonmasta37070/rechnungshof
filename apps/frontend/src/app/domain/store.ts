@@ -76,8 +76,14 @@ export class Store {
 
     readonly activeGroup = computed(() => this.groups().find((g) => g.id === this.activeGroupId()) ?? null);
 
+    /**
+     * Soft-deleted accounts are left out for everyone. The backend refuses to
+     * delete an account any expense refers to, so nothing here can ever need
+     * the name of a deleted one — but a deleted duplicate did show up in the
+     * balance panel and the participant list.
+     */
     accountsOf(groupId: number): AccountLike[] {
-        return this.data()[groupId]?.accounts ?? [];
+        return (this.data()[groupId]?.accounts ?? []).filter((a) => !a.deleted);
     }
 
     transactionsOf(groupId: number): Transaction[] {
