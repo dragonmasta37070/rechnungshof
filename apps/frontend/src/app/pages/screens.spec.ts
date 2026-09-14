@@ -11,7 +11,6 @@ import { Store } from "../domain/store";
 import { Balances } from "./balances/balances";
 import { Editor } from "./editor/editor";
 import { Expenses } from "./expenses/expenses";
-import { GroupSettings } from "./group-settings/group-settings";
 import { GroupView } from "./group/group";
 import { Groups } from "./groups/groups";
 import { Profile } from "./profile/profile";
@@ -314,20 +313,10 @@ describe("group view", () => {
 describe("group invites", () => {
     afterEach(() => TestBed.resetTestingModule());
 
-    async function openSettings(invites: GroupInvite[] = [], members: unknown[] = []) {
-        const fixture = await setup<GroupSettings>(GroupSettings, { id: "1" });
-        const http = TestBed.inject(HttpTestingController);
-        // Both are issued by ngOnInit; flush them so the assertions below are
-        // about the sheet, not the page load.
-        http.expectOne("/api/v1/groups/1/members").flush(members);
-        http.expectOne("/api/v1/groups/1/invites").flush(invites);
-        await fixture.whenStable();
-        return { fixture, http };
-    }
-
     async function openSheet(invites: GroupInvite[]) {
-        const { fixture, http } = await openSettings();
-        (fixture.componentInstance as unknown as { openLink(): void }).openLink();
+        const fixture = await setup<GroupView>(GroupView, { id: "1" });
+        const http = TestBed.inject(HttpTestingController);
+        (fixture.componentInstance as unknown as { invite(): void }).invite();
         http.expectOne("/api/v1/groups/1/invites").flush(invites);
         await fixture.whenStable();
         return { fixture, http };
@@ -362,113 +351,5 @@ describe("group invites", () => {
         await fixture.whenStable();
 
         expect(text(fixture)).toContain("/invite/fresh");
-    });
-
-    it("invites by username and lists the invite as pending", async () => {
-        const { fixture, http } = await openSettings();
-        const instance = fixture.componentInstance as unknown as {
-            username: { set(v: string): void };
-            invite(): void;
-        };
-        instance.username.set("test1");
-        instance.invite();
-
-        const req = http.expectOne("/api/v1/groups/1/invites/user");
-        expect(req.request.method).toBe("POST");
-        expect(req.request.body).toEqual({ username: "test1" });
-        req.flush(invite({ id: 7, invited_user_id: 9, invited_username: "test1" }));
-        await fixture.whenStable();
-
-        const rendered = text(fixture);
-        expect(rendered).toContain("Ausstehende Einladungen");
-        expect(rendered).toContain("test1");
-    });
-
-    it("offers the account matching the login when the user is linked to none", async () => {
-        const { fixture } = await openSettings(
-            [],
-            [
-                {
-                    user_id: 1,
-                    username: "marco",
-                    is_owner: true,
-                    can_write: true,
-                    description: "",
-                    joined_at: "",
-                    invited_by: null,
-                    owned_account_id: null,
-                },
-            ]
-        );
-        TestBed.inject(Store).groups.set([group(1, "WG Sonnenweg", null)]);
-        await fixture.whenStable();
-
-        const rendered = text(fixture);
-        expect(rendered).toContain("Du bist noch keiner Person in dieser Gruppe zugeordnet");
-        expect(rendered).toContain("Das bin ich");
-        // The account named like the login is the obvious candidate.
-        expect(rendered).toContain("Gleicher Name wie dein Login");
-    });
-});
-
-describe("no account linked", () => {
-    afterEach(() => TestBed.resetTestingModule());
-
-    it("group view offers to assign instead of claiming a zero balance", async () => {
-        const fixture = await setup<GroupView>(GroupView, { id: "1" }, false);
-        const store = TestBed.inject(Store);
-        configureStore(store);
-        store.groups.set([group(1, "WG Sonnenweg", null)]);
-        await fixture.whenStable();
-
-        const rendered = text(fixture);
-        expect(rendered).toContain("Kein Konto zugeordnet");
-        expect(rendered).toContain("Zuordnen");
-        // The balance card is gone entirely rather than reading 0,00 €.
-        expect(rendered).not.toContain("Dein Saldo");
-    });
-
-    it("group list says the group is unassigned instead of showing 0,00", async () => {
-        const fixture = await setup(Groups, {}, false);
-        const store = TestBed.inject(Store);
-        configureStore(store);
-        store.groups.set([group(1, "WG Sonnenweg", null)]);
-        await fixture.whenStable();
-
-        const rendered = text(fixture);
-        expect(rendered).toContain("nicht zugeordnet");
-        expect(rendered).not.toContain("0,00");
-    });
-});
-
-describe("incoming invites", () => {
-    afterEach(() => TestBed.resetTestingModule());
-
-    it("shows an invite addressed to the user and joins with its token", async () => {
-        const fixture = await setup<Groups>(Groups);
-        const store = TestBed.inject(Store);
-        store.pendingInvites.set([
-            {
-                id: 3,
-                token: "tok",
-                group_id: 7,
-                group_name: "Urlaub",
-                group_description: "",
-                currency_identifier: "EUR",
-                invited_by_username: "test1",
-                valid_until: null,
-            },
-        ]);
-        await fixture.whenStable();
-
-        const rendered = text(fixture);
-        expect(rendered).toContain("Einladungen");
-        expect(rendered).toContain("Urlaub");
-        expect(rendered).toContain("von test1");
-
-        (fixture.componentInstance as unknown as { accept(id: number, token: string): void }).accept(3, "tok");
-        const http = TestBed.inject(HttpTestingController);
-        const req = http.expectOne("/api/v1/groups/join");
-        expect(req.request.body).toEqual({ invite_token: "tok" });
     });
 });

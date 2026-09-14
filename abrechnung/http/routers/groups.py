@@ -14,7 +14,6 @@ from abrechnung.domain.groups import (
     GroupLog,
     GroupMember,
     GroupPreview,
-    PendingInvite,
 )
 from abrechnung.domain.users import User
 from abrechnung.http.auth import get_current_user, get_current_user_optional
@@ -356,56 +355,6 @@ async def create_invite(
         join_as_editor=payload.join_as_editor,
     )
     return await group_service.get_invite(user=user, group_id=group_id, invite_id=invite_id)
-
-
-class InviteUserPayload(BaseModel):
-    username: str
-
-
-@router.post(
-    r"/v1/groups/{group_id}/invites/user",
-    summary="invite a user by username",
-    response_model=GroupInvite,
-    operation_id="invite_user",
-    tags=["groups", "group_invites"],
-)
-async def invite_user(
-    group_id: int,
-    payload: InviteUserPayload,
-    user: User = Depends(get_current_user),
-    group_service: GroupService = Depends(get_group_service),
-):
-    invite_id = await group_service.invite_user(user=user, group_id=group_id, username=payload.username)
-    return await group_service.get_invite(user=user, group_id=group_id, invite_id=invite_id)
-
-
-@router.get(
-    r"/v1/invites",
-    summary="list the invites addressed to the current user",
-    response_model=List[PendingInvite],
-    operation_id="list_pending_invites",
-    tags=["groups", "group_invites"],
-)
-async def list_pending_invites(
-    user: User = Depends(get_current_user),
-    group_service: GroupService = Depends(get_group_service),
-):
-    return await group_service.list_pending_invites(user=user)
-
-
-@router.post(
-    r"/v1/invites/{invite_id}/decline",
-    summary="decline an invite addressed to the current user",
-    status_code=status.HTTP_204_NO_CONTENT,
-    operation_id="decline_invite",
-    tags=["groups", "group_invites"],
-)
-async def decline_invite(
-    invite_id: int,
-    user: User = Depends(get_current_user),
-    group_service: GroupService = Depends(get_group_service),
-):
-    await group_service.decline_invite(user=user, invite_id=invite_id)
 
 
 @router.delete(

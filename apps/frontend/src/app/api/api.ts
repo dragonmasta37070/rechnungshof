@@ -15,7 +15,6 @@ export type NewAccount = Schemas.NewAccount;
 export type SplitMode = Schemas.SplitMode;
 export type GroupInvite = Schemas.GroupInvite;
 export type GroupPreview = Schemas.GroupPreview;
-export type PendingInvite = Schemas.PendingInvite;
 
 /** The backend's own explanation of a rejected request, when it sent one. */
 export function apiMessage(error: unknown): string | null {
@@ -102,31 +101,6 @@ export class Api {
             join_as_editor: true,
         };
         return this.http.post<GroupInvite>(`/api/v1/groups/${groupId}/invites`, payload);
-    }
-
-    /** Invites one named person; they only become a member once they accept. */
-    inviteUser(groupId: number, username: string): Observable<GroupInvite> {
-        return this.http.post<GroupInvite>(`/api/v1/groups/${groupId}/invites/user`, { username });
-    }
-
-    deleteInvite(groupId: number, inviteId: number): Observable<unknown> {
-        return this.http.delete(`/api/v1/groups/${groupId}/invites/${inviteId}`);
-    }
-
-    /** The invites addressed to the signed-in user, across all groups. */
-    pendingInvites(): Observable<PendingInvite[]> {
-        return this.http.get<PendingInvite[]>("/api/v1/invites");
-    }
-
-    declineInvite(inviteId: number): Observable<unknown> {
-        return this.http.post(`/api/v1/invites/${inviteId}/decline`, {});
-    }
-
-    /** Links a member to the account that represents them in the group. */
-    setOwnedAccount(groupId: number, userId: number, accountId: number | null): Observable<GroupMember> {
-        return this.http.post<GroupMember>(`/api/v1/groups/${groupId}/members/${userId}/owned-account`, {
-            owned_account_id: accountId,
-        });
     }
 
     previewGroup(inviteToken: string): Observable<GroupPreview> {

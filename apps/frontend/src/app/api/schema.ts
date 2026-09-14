@@ -38,7 +38,11 @@ export namespace Schemas {
     };
     export type FileAttachmentJsonExportV1 = { filename: string; mime_type: string; content: string };
     export type ServiceMessageType = "info" | "error" | "warning" | "success";
-    export type ServiceMessage = { type: ServiceMessageType; title?: (string | null) | undefined; body: string };
+    export type ServiceMessage = {
+        type: ServiceMessageType;
+        title?: (string | null) | undefined;
+        body: string;
+    };
     /**
      * What a browser client needs to start the PKCE flow itself.
      *
@@ -89,8 +93,6 @@ export namespace Schemas {
         join_as_editor: boolean;
         description: string;
         valid_until: string | null;
-        invited_user_id?: (number | null) | undefined;
-        invited_username?: (string | null) | undefined;
     };
     export type GroupMetadataExportV1 = {
         name: string;
@@ -179,7 +181,6 @@ export namespace Schemas {
     export type HTTPValidationError = Partial<{ detail: Array<ValidationError> }>;
     export type ImportGroupPayload = { group_json: string };
     export type ImportGroupResponse = { group_id: number };
-    export type InviteUserPayload = { username: string };
     export type NewAccount = {
         type: AccountType;
         name: string;
@@ -210,19 +211,6 @@ export namespace Schemas {
         split_mode: SplitMode;
         new_files?: Array<NewFile> | undefined;
         new_positions?: Array<NewTransactionPosition> | undefined;
-    };
-    /**
-     * An invite as the invited user sees it, before they have accepted it.
-     */
-    export type PendingInvite = {
-        id: number;
-        token: string;
-        group_id: number;
-        group_name: string;
-        group_description: string;
-        currency_identifier: string;
-        invited_by_username: string;
-        valid_until: string | null;
     };
     export type PersonalAccount = {
         id: number;

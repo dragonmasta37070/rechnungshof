@@ -22,23 +22,6 @@ class GroupInvite(BaseModel):
     join_as_editor: bool
     description: str
     valid_until: datetime | None
-    # Set when the invite names one person: only they can use the token, and
-    # the group sees the invite as pending until they accept it.
-    invited_user_id: int | None = None
-    invited_username: str | None = None
-
-
-class PendingInvite(BaseModel):
-    """An invite as the invited user sees it, before they have accepted it."""
-
-    id: int
-    token: str
-    group_id: int
-    group_name: str
-    group_description: str
-    currency_identifier: str
-    invited_by_username: str
-    valid_until: datetime | None
 
 
 class Group(BaseModel):

@@ -1511,163 +1511,6 @@
                 }
             }
         },
-        "/api/v1/groups/{group_id}/invites/user": {
-            "post": {
-                "tags": [
-                    "groups",
-                    "group_invites"
-                ],
-                "summary": "invite a user by username",
-                "operationId": "invite_user",
-                "security": [
-                    {
-                        "HTTPBearer": []
-                    }
-                ],
-                "parameters": [
-                    {
-                        "name": "group_id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "title": "Group Id"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/InviteUserPayload"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Successful Response",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/GroupInvite"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "unauthorized"
-                    },
-                    "403": {
-                        "description": "forbidden"
-                    },
-                    "404": {
-                        "description": "Not found"
-                    },
-                    "422": {
-                        "description": "Validation Error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/HTTPValidationError"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/invites": {
-            "get": {
-                "tags": [
-                    "groups",
-                    "group_invites"
-                ],
-                "summary": "list the invites addressed to the current user",
-                "operationId": "list_pending_invites",
-                "responses": {
-                    "200": {
-                        "description": "Successful Response",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "items": {
-                                        "$ref": "#/components/schemas/PendingInvite"
-                                    },
-                                    "type": "array",
-                                    "title": "Response List Pending Invites"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "unauthorized"
-                    },
-                    "403": {
-                        "description": "forbidden"
-                    },
-                    "404": {
-                        "description": "Not found"
-                    }
-                },
-                "security": [
-                    {
-                        "HTTPBearer": []
-                    }
-                ]
-            }
-        },
-        "/api/v1/invites/{invite_id}/decline": {
-            "post": {
-                "tags": [
-                    "groups",
-                    "group_invites"
-                ],
-                "summary": "decline an invite addressed to the current user",
-                "operationId": "decline_invite",
-                "security": [
-                    {
-                        "HTTPBearer": []
-                    }
-                ],
-                "parameters": [
-                    {
-                        "name": "invite_id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "title": "Invite Id"
-                        }
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "Successful Response"
-                    },
-                    "401": {
-                        "description": "unauthorized"
-                    },
-                    "403": {
-                        "description": "forbidden"
-                    },
-                    "404": {
-                        "description": "Not found"
-                    },
-                    "422": {
-                        "description": "Validation Error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/HTTPValidationError"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/api/v1/groups/{group_id}/invites/{invite_id}": {
             "delete": {
                 "tags": [
@@ -1897,7 +1740,7 @@
                     "groups"
                 ],
                 "summary": "import a group from json",
-                "operationId": "import_group",
+                "operationId": "unarchive_group",
                 "requestBody": {
                     "content": {
                         "application/json": {
@@ -2363,7 +2206,7 @@
                     "common"
                 ],
                 "summary": "Get Frontend Config",
-                "operationId": "get_frontend_config",
+                "operationId": "get_config",
                 "responses": {
                     "200": {
                         "description": "Successful Response",
@@ -2844,28 +2687,6 @@
                             }
                         ],
                         "title": "Valid Until"
-                    },
-                    "invited_user_id": {
-                        "anyOf": [
-                            {
-                                "type": "integer"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ],
-                        "title": "Invited User Id"
-                    },
-                    "invited_username": {
-                        "anyOf": [
-                            {
-                                "type": "string"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ],
-                        "title": "Invited Username"
                     }
                 },
                 "type": "object",
@@ -3211,19 +3032,6 @@
                 ],
                 "title": "ImportGroupResponse"
             },
-            "InviteUserPayload": {
-                "properties": {
-                    "username": {
-                        "type": "string",
-                        "title": "Username"
-                    }
-                },
-                "type": "object",
-                "required": [
-                    "username"
-                ],
-                "title": "InviteUserPayload"
-            },
             "NewAccount": {
                 "properties": {
                     "type": {
@@ -3439,63 +3247,6 @@
                 "title": "OIDCFrontendConfig",
                 "description": "What a browser client needs to start the PKCE flow itself.\n\nBoth values are public by definition: the client id travels in every\nauthorization URL, and the issuer is the provider's own discovery identity.\nNothing secret is exposed here \u2014 the audience/client id is not a credential,\nwhich is exactly why the provider is configured as a public client.\n\nServing these instead of baking them into the bundle is what keeps one built\nartifact deployable against dev, staging and production: an Angular build is\nstatic, so container env vars never reach the browser on their own."
             },
-            "PendingInvite": {
-                "properties": {
-                    "id": {
-                        "type": "integer",
-                        "title": "Id"
-                    },
-                    "token": {
-                        "type": "string",
-                        "title": "Token"
-                    },
-                    "group_id": {
-                        "type": "integer",
-                        "title": "Group Id"
-                    },
-                    "group_name": {
-                        "type": "string",
-                        "title": "Group Name"
-                    },
-                    "group_description": {
-                        "type": "string",
-                        "title": "Group Description"
-                    },
-                    "currency_identifier": {
-                        "type": "string",
-                        "title": "Currency Identifier"
-                    },
-                    "invited_by_username": {
-                        "type": "string",
-                        "title": "Invited By Username"
-                    },
-                    "valid_until": {
-                        "anyOf": [
-                            {
-                                "type": "string",
-                                "format": "date-time"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ],
-                        "title": "Valid Until"
-                    }
-                },
-                "type": "object",
-                "required": [
-                    "id",
-                    "token",
-                    "group_id",
-                    "group_name",
-                    "group_description",
-                    "currency_identifier",
-                    "invited_by_username",
-                    "valid_until"
-                ],
-                "title": "PendingInvite",
-                "description": "An invite as the invited user sees it, before they have accepted it."
-            },
             "PersonalAccount": {
                 "properties": {
                     "id": {
@@ -3568,7 +3319,6 @@
                 "properties": {
                     "invite_token": {
                         "type": "string",
-                        "format": "uuid",
                         "title": "Invite Token"
                     }
                 },

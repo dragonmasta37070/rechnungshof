@@ -25,7 +25,6 @@ export type IconName =
     | "trash"
     | "key"
     | "close"
-    | "settings"
     | "sign-out";
 
 const PATHS: Record<IconName, string> = {
@@ -45,8 +44,6 @@ const PATHS: Record<IconName, string> = {
     trash: "M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14M10 11v6M14 11v6",
     key: "M15 3a6 6 0 1 0-4.2 10.3L4 20v3h3l7-7A6 6 0 0 0 15 3Zm2 4h.01",
     close: "M6 6l12 12M18 6 6 18",
-    settings:
-        "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm7.4-3a7.4 7.4 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7.4 7.4 0 0 0-2-1.2L14.6 3H9.4l-.4 2.7a7.4 7.4 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5a7.4 7.4 0 0 0 0 2.4l-2 1.5 2 3.4 2.3-1a7.4 7.4 0 0 0 2 1.2l.4 2.7h5.2l.4-2.7a7.4 7.4 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5c.07-.4.1-.8.1-1.2Z",
     "sign-out": "M14 4h5v16h-5M3 12h11m0 0-4-4m4 4-4 4",
 };
 

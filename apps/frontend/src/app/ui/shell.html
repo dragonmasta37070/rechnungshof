@@ -37,9 +37,7 @@
             </li>
             <li>
                 <a routerLink="/groups" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-                    <app-icon name="groups" /> Gruppen @if (store.pendingInvites().length; as count) {
-                    <span class="count" [attr.aria-label]="count + ' offene Einladungen'">{{ count }}</span>
-                    }
+                    <app-icon name="groups" /> Gruppen
                 </a>
             </li>
             <li>
@@ -70,7 +68,7 @@
     </a>
     <a routerLink="/groups" routerLinkActive="active">
         <app-icon name="groups" />
-        <span>Gruppen @if (store.pendingInvites().length; as count) { <span class="count">{{ count }}</span> }</span>
+        <span>Gruppen</span>
     </a>
     <a routerLink="/balances" routerLinkActive="active">
         <app-icon name="balance" />
