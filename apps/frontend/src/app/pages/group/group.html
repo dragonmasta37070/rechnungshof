@@ -111,10 +111,11 @@
                         [plain]="true"
                     />
                 </span>
-                @if (row.ownShare !== null) {
+                @if (row.effect !== null) {
                 <span class="note">
-                    Dein Anteil
-                    <app-amount [value]="row.ownShare" [currency]="g.currency_identifier" [plain]="true" />
+                    @if (row.effect > -0.005 && row.effect < 0.005) { ausgeglichen } @else {
+                    <app-amount [value]="row.effect" [currency]="g.currency_identifier" [signed]="true" />
+                    }
                 </span>
                 }
             </span>

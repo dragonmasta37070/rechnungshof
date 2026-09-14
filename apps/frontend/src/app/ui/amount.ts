@@ -36,10 +36,20 @@ export class Amount {
      * overall" is money you spent, and painting it green read as a windfall.
      */
     readonly plain = input(false);
+    /**
+     * Always show the direction: a leading `+`, or a real minus sign (U+2212)
+     * rather than the hyphen `Intl` emits, which next to a `+` reads as a dash.
+     */
+    readonly signed = input(false);
 
-    protected readonly text = computed(() =>
-        formatAmount(this.absolute() ? Math.abs(this.value()) : this.value(), this.currency())
-    );
+    protected readonly text = computed(() => {
+        const value = this.value();
+        if (this.signed()) {
+            const sign = value > 0 ? "+" : value < 0 ? "−" : "";
+            return sign + formatAmount(Math.abs(value), this.currency());
+        }
+        return formatAmount(this.absolute() ? Math.abs(value) : value, this.currency());
+    });
 
     protected readonly tone = computed(() => {
         const value = this.value();

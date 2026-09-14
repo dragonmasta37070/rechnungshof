@@ -22,3 +22,18 @@ export function shareOf(transaction: Transaction, accountId: number): number | n
     const share = entry.positions + entry.commonDebitors;
     return share === 0 ? null : share;
 }
+
+/**
+ * What a single expense does to one account's balance: what they paid on it
+ * minus what it costs them. Positive means they get money back from it.
+ *
+ * `total` is that figure already — `commonCreditors - positions -
+ * commonDebitors` — so the arithmetic stays in one place, next to the split
+ * rules it depends on.
+ *
+ * Returns null when the account has no part in the expense at all.
+ */
+export function effectOf(transaction: Transaction, accountId: number): number | null {
+    const entry = computeTransactionBalanceEffect(toDomainTransaction(transaction))[accountId];
+    return entry ? entry.total : null;
+}

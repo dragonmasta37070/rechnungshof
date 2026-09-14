@@ -4,7 +4,7 @@ import { Router } from "@angular/router";
 import type { Group, Transaction } from "../../api/api";
 import { formatDateLong, plural } from "../../domain/format";
 import { Store } from "../../domain/store";
-import { shareOf } from "../../domain/share";
+import { effectOf, shareOf } from "../../domain/share";
 import { Amount } from "../../ui/amount";
 import { Icon } from "../../ui/icon";
 
@@ -12,10 +12,13 @@ interface FeedRow {
     group: Group;
     transaction: Transaction;
     payer: string;
-    /** The signed-in user's own share, or null when they owe nothing on it. */
+    /**
+     * What this expense does to the signed-in user's balance — positive if they
+     * get money back from it. Null when they have no part in it.
+     */
+    effect: number | null;
+    /** Their own share of it. Not shown on the row; the header total sums it. */
     ownShare: number | null;
-    /** True when the signed-in user is the one who paid. */
-    ownPayment: boolean;
 }
 
 interface DateSection {
@@ -55,8 +58,8 @@ export class Expenses {
                 group,
                 transaction,
                 payer: nameOf.get(creditorId) ?? "Unbekannt",
+                effect: own == null ? null : effectOf(transaction, own),
                 ownShare: own == null ? null : shareOf(transaction, own),
-                ownPayment: own != null && transaction.creditor_shares[own] != null,
             });
             byDate.set(transaction.billed_at, rows);
         }

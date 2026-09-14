@@ -1,5 +1,6 @@
 import type { Group, PersonalAccount, Transaction } from "../api/api";
 import { balancesFor, netByPerson, settlementFor, type GroupLedger } from "./balances";
+import { effectOf } from "./share";
 
 let nextId = 1;
 
@@ -246,5 +247,21 @@ describe("netByPerson", () => {
         const g2 = ledger(2, "G2", [me2, big], [expense(200, big.id, { [me2.id]: 1, [big.id]: 1 })], me2.id);
 
         expect(netByPerson([g1, g2]).map((n) => n.accountName)).toEqual(["Big", "Small"]);
+    });
+});
+
+describe("effectOf", () => {
+    it("signs one expense from the payer's, a sharer's and an outsider's side", () => {
+        // 30 split three ways: the payer is out 30 and owes 10, so +20; each of the
+        // others owes 10 and paid nothing, so -10. Anyone else is not involved.
+        const alice = account("Alice");
+        const bob = account("Bob");
+        const carol = account("Carol");
+        const dave = account("Dave");
+        const t = expense(30, alice.id, { [alice.id]: 1, [bob.id]: 1, [carol.id]: 1 });
+
+        expect(effectOf(t, alice.id)).toBeCloseTo(20, 6);
+        expect(effectOf(t, bob.id)).toBeCloseTo(-10, 6);
+        expect(effectOf(t, dave.id)).toBeNull();
     });
 });

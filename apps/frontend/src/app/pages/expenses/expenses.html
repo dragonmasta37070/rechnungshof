@@ -40,13 +40,13 @@
                         [plain]="true"
                     />
                 </span>
+                @if (row.effect !== null) {
                 <span class="note">
-                    <!-- A settlement you paid has no share for you, but calling that
-                         "nicht beteiligt" on an expense you funded is simply wrong. -->
-                    @if (row.ownShare !== null) { Dein Anteil
-                    <app-amount [value]="row.ownShare" [currency]="row.group.currency_identifier" [plain]="true" />
-                    } @else if (row.ownPayment) { von dir bezahlt } @else { nicht beteiligt }
+                    @if (row.effect > -0.005 && row.effect < 0.005) { ausgeglichen } @else {
+                    <app-amount [value]="row.effect" [currency]="row.group.currency_identifier" [signed]="true" />
+                    }
                 </span>
+                }
             </span>
         </button>
         }

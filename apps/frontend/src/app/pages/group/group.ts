@@ -16,7 +16,7 @@ import { of, switchMap } from "rxjs";
 import { Api, apiMessage, type Transaction } from "../../api/api";
 import { balancesFor, settlementFor } from "../../domain/balances";
 import { formatDateLong, plural, toIsoDate } from "../../domain/format";
-import { shareOf } from "../../domain/share";
+import { effectOf } from "../../domain/share";
 import { Store } from "../../domain/store";
 import { Amount } from "../../ui/amount";
 import { Icon } from "../../ui/icon";
@@ -25,10 +25,11 @@ interface ExpenseRow {
     transaction: Transaction;
     payer: string;
     peopleLabel: string;
-    /** The signed-in user's own share, or null when they owe nothing on it. */
-    ownShare: number | null;
-    /** True when the signed-in user is the one who paid. */
-    ownPayment: boolean;
+    /**
+     * What this expense does to the signed-in user's balance — positive if they
+     * get money back from it. Null when they have no part in it.
+     */
+    effect: number | null;
 }
 
 interface DateSection {
@@ -157,8 +158,7 @@ export class GroupView {
                 transaction,
                 payer: nameOf.get(creditorId) ?? "Unbekannt",
                 peopleLabel: plural(Object.keys(transaction.debitor_shares).length, "Person", "Personen"),
-                ownShare: own == null ? null : shareOf(transaction, own),
-                ownPayment: own != null && transaction.creditor_shares[own] != null,
+                effect: own == null ? null : effectOf(transaction, own),
             });
             byDate.set(transaction.billed_at, rows);
         }
