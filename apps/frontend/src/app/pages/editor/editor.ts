@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, input, si
 import { FormsModule } from "@angular/forms";
 import { Router } from "@angular/router";
 
-import { Api, type NewTransaction, type SplitMode, type Transaction } from "../../api/api";
+import { Api, apiMessage, type NewTransaction, type SplitMode, type Transaction } from "../../api/api";
 import { currencySymbol, formatDateShort, toIsoDate } from "../../domain/format";
 import { respread, splitEvenly, sumShares, validateSplit } from "../../domain/split";
 import { Store } from "../../domain/store";
@@ -24,12 +24,6 @@ function toWire(mode: SplitMode, shares: Record<number, number>): Record<number,
 function fromWire(mode: SplitMode, shares: Record<string, number>): Record<number, number> {
     const factor = mode === "percent" ? 100 : 1;
     return Object.fromEntries(Object.entries(shares).map(([id, share]) => [Number(id), share * factor]));
-}
-
-/** The backend's own explanation of a rejected write, when it sent one. */
-function apiMessage(error: unknown): string | null {
-    const message = (error as { error?: { message?: unknown } } | null)?.error?.message;
-    return typeof message === "string" && message ? message : null;
 }
 
 @Component({

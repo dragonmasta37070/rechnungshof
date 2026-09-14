@@ -71,7 +71,12 @@
 
     <p class="cap">
         <span>Mitglieder</span>
-        <button type="button" class="cap-action" (click)="addPersonOpen.set(true)">Person hinzufügen</button>
+        <span class="cap-actions">
+            @if (g.can_write) {
+            <button type="button" class="cap-action" (click)="invite()">Einladen</button>
+            }
+            <button type="button" class="cap-action" (click)="addPersonOpen.set(true)">Person hinzufügen</button>
+        </span>
     </p>
     <div class="list">
         @for (member of members(); track member.id) {
@@ -146,7 +151,10 @@
         placeholder="z. B. Bob"
         autocomplete="off"
     />
-    <p class="hint">Diese Person braucht kein eigenes Konto.</p>
+    <p class="hint">
+        Diese Person braucht kein eigenes Konto. Wer sich selbst anmelden kann, kommt besser über „Einladen“ in die
+        Gruppe.
+    </p>
     <div class="actions">
         <button type="button" class="ghost" (click)="addPersonOpen.set(false)">Abbrechen</button>
         <button
@@ -158,6 +166,24 @@
             Hinzufügen
         </button>
     </div>
+</div>
+} @if (inviteOpen()) {
+<div class="scrim" (click)="inviteOpen.set(false)"></div>
+<div class="sheet" role="dialog" aria-modal="true" aria-label="Einladen" (keydown.escape)="inviteOpen.set(false)">
+    <h2>Einladen</h2>
+    @if (inviteLink(); as link) {
+    <p class="hint">Wer diesen Link öffnet und sich anmeldet, wird Mitglied von {{ g.name }}.</p>
+    <p class="link" #linkField>{{ link }}</p>
+    <div class="actions">
+        <button type="button" class="ghost" (click)="inviteOpen.set(false)">Schließen</button>
+        <button type="button" class="primary" (click)="copyLink()">{{ copied() ? 'Kopiert' : 'Link kopieren' }}</button>
+        @if (canShare) {
+        <button type="button" class="primary" (click)="shareLink()">Teilen</button>
+        }
+    </div>
+    } @else {
+    <p class="hint">Einladungslink wird vorbereitet …</p>
+    }
 </div>
 }
 

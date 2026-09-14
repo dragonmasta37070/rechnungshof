@@ -13,6 +13,14 @@ export type PersonalAccount = Schemas.PersonalAccount;
 export type ClearingAccount = Schemas.ClearingAccount;
 export type NewAccount = Schemas.NewAccount;
 export type SplitMode = Schemas.SplitMode;
+export type GroupInvite = Schemas.GroupInvite;
+export type GroupPreview = Schemas.GroupPreview;
+
+/** The backend's own explanation of a rejected request, when it sent one. */
+export function apiMessage(error: unknown): string | null {
+    const message = (error as { error?: { message?: unknown } } | null)?.error?.message;
+    return typeof message === "string" && message ? message : null;
+}
 
 /**
  * Typed wrapper over the REST API.
@@ -79,5 +87,27 @@ export class Api {
 
     createGroup(payload: Schemas.GroupCreatePayload): Observable<Group> {
         return this.http.post<Group>("/api/v1/groups", payload);
+    }
+
+    /** Only invites the current user created carry a `token`; the rest come back null. */
+    invites(groupId: number): Observable<GroupInvite[]> {
+        return this.http.get<GroupInvite[]>(`/api/v1/groups/${groupId}/invites`);
+    }
+
+    createInvite(groupId: number): Observable<GroupInvite> {
+        const payload: Schemas.CreateInvitePayload = {
+            description: "Einladungslink",
+            single_use: false,
+            join_as_editor: true,
+        };
+        return this.http.post<GroupInvite>(`/api/v1/groups/${groupId}/invites`, payload);
+    }
+
+    previewGroup(inviteToken: string): Observable<GroupPreview> {
+        return this.http.post<GroupPreview>("/api/v1/groups/preview", { invite_token: inviteToken });
+    }
+
+    joinGroup(inviteToken: string): Observable<Group> {
+        return this.http.post<Group>("/api/v1/groups/join", { invite_token: inviteToken });
     }
 }

@@ -11,8 +11,9 @@ import {
 } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { Router } from "@angular/router";
+import { of, switchMap } from "rxjs";
 
-import { Api, type Transaction } from "../../api/api";
+import { Api, apiMessage, type Transaction } from "../../api/api";
 import { balancesFor, settlementFor } from "../../domain/balances";
 import { formatDateLong, plural, toIsoDate } from "../../domain/format";
 import { shareOf } from "../../domain/share";
@@ -55,6 +56,11 @@ export class GroupView {
     protected readonly addPersonOpen = signal(false);
     protected readonly newPersonName = signal("");
     protected readonly addingPerson = signal(false);
+    protected readonly inviteOpen = signal(false);
+    protected readonly inviteLink = signal<string | null>(null);
+    protected readonly copied = signal(false);
+    /** Not on every platform — iOS and Android have it, desktop browsers mostly do not. */
+    protected readonly canShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
 
     protected readonly subtitle = computed(
         () =>
@@ -71,6 +77,7 @@ export class GroupView {
     protected readonly group = computed(() => this.store.groups().find((g) => g.id === this.groupId()) ?? null);
 
     private readonly personField = viewChild<ElementRef<HTMLInputElement>>("personField");
+    private readonly linkField = viewChild<ElementRef<HTMLElement>>("linkField");
 
     constructor() {
         effect(() => this.store.activeGroupId.set(this.groupId()));
@@ -185,6 +192,71 @@ export class GroupView {
                 this.store.notice.set("Person konnte nicht hinzugefügt werden.");
             },
         });
+    }
+
+    /**
+     * Opens the invite sheet with a shareable link.
+     *
+     * A group invite is what lets someone with their own login in; "Person
+     * hinzufügen" only makes a placeholder account nobody can sign into. The
+     * link is reusable and never expires, so an existing one is reused rather
+     * than piling up a new row per share. Only invites this user created come
+     * back with a token, hence the `token` check.
+     */
+    invite(): void {
+        this.inviteOpen.set(true);
+        this.copied.set(false);
+        if (this.inviteLink()) {
+            return;
+        }
+        this.store.notice.set(null);
+
+        this.api
+            .invites(this.groupId())
+            .pipe(
+                switchMap((invites) => {
+                    const usable = invites.find(
+                        (i) =>
+                            i.token &&
+                            !i.single_use &&
+                            (i.valid_until === null || Date.parse(i.valid_until) > Date.now())
+                    );
+                    return usable ? of(usable) : this.api.createInvite(this.groupId());
+                })
+            )
+            .subscribe({
+                next: (invite) => this.inviteLink.set(`${location.origin}/invite/${invite.token}`),
+                error: (error: unknown) => {
+                    this.inviteOpen.set(false);
+                    this.store.notice.set(apiMessage(error) ?? "Einladungslink konnte nicht erstellt werden.");
+                },
+            });
+    }
+
+    async copyLink(): Promise<void> {
+        const link = this.inviteLink();
+        if (!link) {
+            return;
+        }
+        try {
+            await navigator.clipboard.writeText(link);
+            this.copied.set(true);
+        } catch {
+            // ponytail: no clipboard API outside a secure context, and the user can
+            // deny it. Selecting the link is the fallback every browser has.
+            const element = this.linkField()?.nativeElement;
+            if (element) {
+                getSelection()?.selectAllChildren(element);
+            }
+        }
+    }
+
+    shareLink(): void {
+        const link = this.inviteLink();
+        if (link) {
+            // Rejects when the user dismisses the share sheet — not an error.
+            void navigator.share({ title: this.group()?.name, url: link }).catch(() => undefined);
+        }
     }
 
     back(): void {

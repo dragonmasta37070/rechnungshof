@@ -227,6 +227,11 @@
     text-decoration: underline;
 }
 
+.cap-actions {
+    display: flex;
+    gap: var(--space-3);
+}
+
 .row.static {
     cursor: default;
 }
@@ -298,13 +303,29 @@
     font-size: 12px;
 }
 
+/* The invite link: `user-select: all` makes one click select the whole thing,
+   which is the manual fallback when the clipboard API is unavailable. */
+.sheet .link {
+    margin: 0 0 var(--space-5);
+    padding: var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--elevated);
+    color: var(--text-2);
+    font-size: 12px;
+    overflow-wrap: anywhere;
+    user-select: all;
+}
+
 .sheet .actions {
     display: flex;
+    /* Three buttons (Schließen · Kopieren · Teilen) do not fit one phone row. */
+    flex-wrap: wrap;
     gap: var(--space-3);
 }
 
 .sheet .actions button {
-    flex: 1;
+    flex: 1 1 130px;
     min-height: 48px;
     border-radius: var(--radius-md);
     font: inherit;

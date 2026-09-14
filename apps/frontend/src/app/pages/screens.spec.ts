@@ -5,7 +5,7 @@ import { provideRouter } from "@angular/router";
 import { OidcSecurityService } from "angular-auth-oidc-client";
 import { of } from "rxjs";
 
-import type { Group, PersonalAccount, Transaction, User } from "../api/api";
+import type { Group, GroupInvite, PersonalAccount, Transaction, User } from "../api/api";
 import { AppConfigService } from "../core/app-config";
 import { Store } from "../domain/store";
 import { Balances } from "./balances/balances";
@@ -63,6 +63,19 @@ function group(id: number, name: string, ownAccountId: number | null): Group {
         is_owner: true,
         can_write: true,
         owned_account_id: ownAccountId,
+    };
+}
+
+function invite(overrides: Partial<GroupInvite> = {}): GroupInvite {
+    return {
+        id: 1,
+        created_by: 1,
+        token: "abc",
+        single_use: false,
+        join_as_editor: true,
+        description: "Einladungslink",
+        valid_until: null,
+        ...overrides,
     };
 }
 
@@ -294,5 +307,49 @@ describe("group view", () => {
     it("says a group it cannot find is missing rather than loading forever", async () => {
         const fixture = await setup<GroupView>(GroupView, { id: "999" });
         expect(text(fixture)).toContain("Gruppe nicht gefunden");
+    });
+});
+
+describe("group invites", () => {
+    afterEach(() => TestBed.resetTestingModule());
+
+    async function openSheet(invites: GroupInvite[]) {
+        const fixture = await setup<GroupView>(GroupView, { id: "1" });
+        const http = TestBed.inject(HttpTestingController);
+        (fixture.componentInstance as unknown as { invite(): void }).invite();
+        http.expectOne("/api/v1/groups/1/invites").flush(invites);
+        await fixture.whenStable();
+        return { fixture, http };
+    }
+
+    it("reuses a usable invite instead of piling up a new one per share", async () => {
+        const { fixture, http } = await openSheet([invite({ id: 5, token: "reuse-me" })]);
+
+        // No POST: a reusable link already exists, and creating one per click
+        // would leave the group with an invite row for every time anyone shared.
+        http.verify();
+        expect(text(fixture)).toContain("/invite/reuse-me");
+    });
+
+    it("creates one when no listed invite can be shared", async () => {
+        // A foreign invite comes back with token null, a single-use one is spent
+        // after the first join, and an expired one is dead — none are shareable.
+        const { fixture, http } = await openSheet([
+            invite({ id: 2, created_by: 9, token: null }),
+            invite({ id: 3, single_use: true }),
+            invite({ id: 4, valid_until: "2020-01-01T00:00:00Z" }),
+        ]);
+
+        const req = http.expectOne("/api/v1/groups/1/invites");
+        expect(req.request.method).toBe("POST");
+        expect(req.request.body).toEqual({
+            description: "Einladungslink",
+            single_use: false,
+            join_as_editor: true,
+        });
+        req.flush(invite({ id: 6, token: "fresh" }));
+        await fixture.whenStable();
+
+        expect(text(fixture)).toContain("/invite/fresh");
     });
 });

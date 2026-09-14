@@ -18,6 +18,15 @@ export const routes: Routes = [
         canActivate: [authGuard],
         loadComponent: () => import("./pages/editor/editor").then((m) => m.Editor),
     },
+    // Also outside the shell: whoever follows an invite link is not a member of
+    // that group yet, so the tab bar would point at data they cannot see. The
+    // guard remembers the deep link, so opening this while logged out returns
+    // here after Authentik.
+    {
+        path: "invite/:token",
+        canActivate: [authGuard],
+        loadComponent: () => import("./pages/invite/invite").then((m) => m.Invite),
+    },
     {
         path: "",
         canActivate: [authGuard],
