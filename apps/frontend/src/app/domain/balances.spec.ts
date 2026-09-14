@@ -94,6 +94,29 @@ describe("balancesFor", () => {
         expect(total).toBeCloseTo(0, 6);
     });
 
+    it("ignores a deleted expense in balances, settlement and netting", () => {
+        // The API returns soft-deleted transactions like any other. Counting one
+        // inflated every screen that did not filter first.
+        const alice = account("Alice");
+        const bob = account("Bob");
+        const accounts = [alice, bob];
+        const live = expense(40, alice.id, { [alice.id]: 1, [bob.id]: 1 });
+        const deleted = expense(50, alice.id, { [alice.id]: 1, [bob.id]: 1 }, { deleted: true });
+        const transactions = [live, deleted];
+
+        const byId = new Map(balancesFor(accounts, transactions).map((b) => [b.accountId, b]));
+        expect(byId.get(alice.id)!.balance).toBeCloseTo(20, 6);
+        expect(byId.get(bob.id)!.balance).toBeCloseTo(-20, 6);
+
+        const plan = settlementFor(accounts, transactions);
+        expect(plan).toHaveLength(1);
+        expect(plan[0].amount).toBeCloseTo(20, 6);
+
+        const netted = netByPerson([{ group: group(1, "Flat"), accounts, transactions, ownAccountId: bob.id }]);
+        expect(netted).toHaveLength(1);
+        expect(netted[0].net).toBeCloseTo(20, 6);
+    });
+
     it("honours an absolute split", () => {
         // Absolute shares are amounts, not weights: Bob owes exactly 10.
         const alice = account("Alice");

@@ -8,6 +8,30 @@ import { respread, splitEvenly, sumShares, validateSplit } from "../../domain/sp
 import { Store } from "../../domain/store";
 import { Icon } from "../../ui/icon";
 
+/**
+ * Percent shares on the wire are fractions of 1 — the database rejects anything
+ * whose debitor shares do not sum to 1.0 — while the editor works in whole
+ * percent, because that is what the user types and what the sum indicator reads.
+ * The conversion belongs at the API boundary, exactly as the React app does it.
+ */
+function toWire(mode: SplitMode, shares: Record<number, number>): Record<number, number> {
+    if (mode !== "percent") {
+        return shares;
+    }
+    return Object.fromEntries(Object.entries(shares).map(([id, share]) => [Number(id), share / 100]));
+}
+
+function fromWire(mode: SplitMode, shares: Record<string, number>): Record<number, number> {
+    const factor = mode === "percent" ? 100 : 1;
+    return Object.fromEntries(Object.entries(shares).map(([id, share]) => [Number(id), share * factor]));
+}
+
+/** The backend's own explanation of a rejected write, when it sent one. */
+function apiMessage(error: unknown): string | null {
+    const message = (error as { error?: { message?: unknown } } | null)?.error?.message;
+    return typeof message === "string" && message ? message : null;
+}
+
 @Component({
     selector: "app-editor",
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -144,11 +168,7 @@ export class Editor {
                 this.type.set(existing.type);
                 this.creditorId.set(Number(Object.keys(existing.creditor_shares)[0]));
                 this.splitMode.set(existing.split_mode);
-                this.shares.set(
-                    Object.fromEntries(
-                        Object.entries(existing.debitor_shares).map(([id, share]) => [Number(id), share])
-                    )
-                );
+                this.shares.set(fromWire(existing.split_mode, existing.debitor_shares));
                 return;
             }
 
@@ -264,7 +284,7 @@ export class Editor {
             billed_at: this.billedAt(),
             tags: [],
             creditor_shares: { [creditor]: 1 },
-            debitor_shares: this.shares(),
+            debitor_shares: toWire(this.splitMode(), this.shares()),
             split_mode: this.splitMode(),
         };
 
@@ -276,9 +296,9 @@ export class Editor {
 
         request.subscribe({
             next: () => this.store.refreshGroup(this.gid()).subscribe(() => this.close()),
-            error: () => {
+            error: (error: unknown) => {
                 this.saving.set(false);
-                this.store.notice.set("Speichern fehlgeschlagen. Bitte nochmal versuchen.");
+                this.store.notice.set(apiMessage(error) ?? "Speichern fehlgeschlagen. Bitte nochmal versuchen.");
             },
         });
     }

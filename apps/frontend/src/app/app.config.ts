@@ -44,6 +44,15 @@ export function oidcConfigLoader(http: HttpClient): StsConfigHttpLoader {
                 // so no silentRenewUrl is needed.
                 silentRenew: true,
                 useRefreshToken: true,
+                // Authentik only mints a *new* refresh token when the current one
+                // is inside the provider's `refresh_token_threshold`; otherwise the
+                // refresh response carries no `refresh_token` at all. The library
+                // overwrites its stored `authnResult` with that response wholesale,
+                // so the token vanishes and the next renew logs "no refresh token
+                // found, please login" and throws the user out mid-task. This keeps
+                // the last one it saw and reuses it — the library's own remedy for
+                // a provider that does not rotate on every refresh.
+                allowUnsafeReuseRefreshToken: true,
                 // Deliberately generous: a backgrounded tab has throttled timers, and
                 // missing the renewal window lands the user in a 401 instead.
                 renewTimeBeforeTokenExpiresInSeconds: 90,

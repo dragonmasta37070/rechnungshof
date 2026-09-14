@@ -30,11 +30,21 @@ export interface PersonNetting {
 /** Amounts below this are rounding noise, not debt. */
 const EPSILON = 0.005;
 
+/**
+ * Soft-deleted transactions, which the API returns like any other.
+ *
+ * They must never reach `computeAccountBalances` — it has no idea about the
+ * flag and books them as real money. Filtering here rather than in each screen
+ * is the point: the Salden page, the group list and `netByPerson` all used to
+ * forget, and only the group page got it right.
+ */
+const alive = (transactions: Transaction[]): Transaction[] => transactions.filter((t) => !t.deleted);
+
 export function balancesFor(
     accounts: (PersonalAccount | ClearingAccount)[],
     transactions: Transaction[]
 ): AccountBalance[] {
-    const raw = computeAccountBalances(toDomainAccounts(accounts), toDomainTransactions(transactions));
+    const raw = computeAccountBalances(toDomainAccounts(accounts), toDomainTransactions(alive(transactions)));
 
     return Object.entries(raw).map(([accountId, balance]) => ({
         accountId: Number(accountId),
@@ -47,7 +57,7 @@ export function settlementFor(
     accounts: (PersonalAccount | ClearingAccount)[],
     transactions: Transaction[]
 ): SettlementEdge[] {
-    const raw = computeAccountBalances(toDomainAccounts(accounts), toDomainTransactions(transactions));
+    const raw = computeAccountBalances(toDomainAccounts(accounts), toDomainTransactions(alive(transactions)));
 
     return computeGroupSettlement(raw).map((item) => ({
         // computeGroupSettlement names the payer `creditorId` and the payee

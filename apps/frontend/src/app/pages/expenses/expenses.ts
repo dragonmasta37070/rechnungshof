@@ -76,7 +76,9 @@ export class Expenses {
                 ownShare += row.ownShare ?? 0;
                 const own = row.group.owned_account_id;
                 if (own != null && row.transaction.creditor_shares[own] != null) {
-                    paidByUser += row.transaction.value;
+                    // `value` is in the expense's own currency; the tile shows group
+                    // currency, which is what `ownShare` above already reports.
+                    paidByUser += row.transaction.value * row.transaction.currency_conversion_rate;
                 }
             }
         }

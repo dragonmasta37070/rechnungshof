@@ -46,7 +46,7 @@
                     @if (row.ownShare !== null) { Dein Anteil
                     <app-amount
                         [value]="row.ownShare"
-                        [currency]="row.transaction.currency_identifier"
+                        [currency]="row.group.currency_identifier"
                         [plain]="true"
                     />
                     } @else if (row.ownPayment) { von dir bezahlt } @else { nicht beteiligt }
