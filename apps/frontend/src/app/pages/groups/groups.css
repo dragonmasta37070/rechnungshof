@@ -143,3 +143,14 @@
         animation: none;
     }
 }
+
+/* On a phone the two buttons squeezed the group name to "QA Schu…". */
+@media (max-width: 480px) {
+    .row:has(.invite-actions) {
+        flex-wrap: wrap;
+    }
+    .invite-actions {
+        flex-basis: 100%;
+        justify-content: flex-end;
+    }
+}

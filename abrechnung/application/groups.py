@@ -122,7 +122,7 @@ class GroupService(Service[Config]):
             username,
         )
         if invited is None:
-            raise InvalidArgument("Benutzer nicht gefunden")
+            raise InvalidArgument("Benutzer nicht gefunden. Die Person muss sich zuerst einmal hier anmelden.")
 
         is_member = await conn.fetchval(
             "select exists (select from group_membership where group_id = $1 and user_id = $2)",
