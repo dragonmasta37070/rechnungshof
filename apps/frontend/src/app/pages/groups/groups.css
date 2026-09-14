@@ -1,3 +1,45 @@
+.row.static {
+    cursor: default;
+}
+
+.row.static:hover {
+    background: none;
+}
+
+.invite-actions {
+    display: flex;
+    flex: none;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.invite-actions button {
+    min-height: var(--touch-target-min);
+    padding: 0 var(--space-3);
+    border-radius: var(--radius-md);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.invite-actions .primary {
+    border: 0;
+    background: var(--accent);
+    color: var(--on-accent);
+}
+
+.invite-actions .ghost {
+    border: 1px solid var(--border);
+    background: none;
+    color: var(--text-2);
+}
+
+.invite-actions button:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
 .scrim {
     position: fixed;
     inset: 0;

@@ -4,7 +4,33 @@
 </div>
 
 <div class="page">
-    @if (rows().length) {
+    @if (store.pendingInvites().length) {
+    <p class="cap"><span>Einladungen</span></p>
+    <div class="list">
+        @for (invite of store.pendingInvites(); track invite.id) {
+        <div class="row static">
+            <span class="tile"><app-icon name="groups" /></span>
+            <span class="body">
+                <span class="title">{{ invite.group_name }}</span>
+                <span class="sub">von {{ invite.invited_by_username }}</span>
+            </span>
+            <span class="invite-actions">
+                <button
+                    type="button"
+                    class="primary"
+                    [disabled]="answering() !== null"
+                    (click)="accept(invite.id, invite.token)"
+                >
+                    Annehmen
+                </button>
+                <button type="button" class="ghost" [disabled]="answering() !== null" (click)="decline(invite.id)">
+                    Ablehnen
+                </button>
+            </span>
+        </div>
+        }
+    </div>
+    } @if (rows().length) {
     <div class="list">
         @for (row of rows(); track row.group.id) {
         <a class="row" [routerLink]="['/groups', row.group.id]">
@@ -14,10 +40,14 @@
                 <span class="sub">{{ row.members }} · {{ row.expenses }}</span>
             </span>
             <span class="trail">
+                @if (row.linked) {
                 <span class="badge" [class]="row.tone">
                     <app-amount [value]="row.balance" [currency]="row.group.currency_identifier" [absolute]="true" />
                 </span>
                 <span class="note">{{ row.note }}</span>
+                } @else {
+                <span class="badge muted">nicht zugeordnet</span>
+                }
             </span>
         </a>
         }

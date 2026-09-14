@@ -3,14 +3,18 @@
     <button type="button" class="back" (click)="back()" aria-label="Zurück zu Gruppen">
         <app-icon name="chevron-left" [size]="20" />
     </button>
-    <div>
+    <div class="head-body">
         <h1>{{ g.name }}</h1>
         <p class="sub">{{ subtitle() }}</p>
     </div>
+    <button type="button" class="back" (click)="openSettings()" aria-label="Gruppeneinstellungen">
+        <app-icon name="settings" [size]="20" />
+    </button>
 </header>
 
 <div class="page">
     <div class="balance">
+        @if (linked()) {
         <button
             type="button"
             class="balance-toggle"
@@ -25,8 +29,25 @@
             </span>
             <app-icon [name]="panelOpen() ? 'chevron-up' : 'chevron-down'" [size]="14" />
         </button>
-
-        @if (panelOpen()) {
+        } @else {
+        <!-- No account link, no balance: showing 0,00 € here read as "you are
+             square" to someone who had paid for everything. -->
+        <div class="balance-toggle">
+            <span class="left">
+                <span class="label">Kein Konto zugeordnet</span>
+                <a class="assign" [routerLink]="['/groups', groupId(), 'settings']">Zuordnen</a>
+            </span>
+            <button
+                type="button"
+                class="peek"
+                (click)="panelOpen.set(!panelOpen())"
+                [attr.aria-expanded]="panelOpen()"
+                aria-label="Salden der Gruppe"
+            >
+                <app-icon [name]="panelOpen() ? 'chevron-up' : 'chevron-down'" [size]="14" />
+            </button>
+        </div>
+        } @if (panelOpen()) {
         <div class="panel">
             @for (member of members(); track member.id) {
             <div class="member">
@@ -69,30 +90,6 @@
         }
     </div>
 
-    <p class="cap">
-        <span>Mitglieder</span>
-        <span class="cap-actions">
-            @if (g.can_write) {
-            <button type="button" class="cap-action" (click)="invite()">Einladen</button>
-            }
-            <button type="button" class="cap-action" (click)="addPersonOpen.set(true)">Person hinzufügen</button>
-        </span>
-    </p>
-    <div class="list">
-        @for (member of members(); track member.id) {
-        <div class="row static">
-            <span class="avatar">{{ member.name.charAt(0) }}</span>
-            <span class="body">
-                <span class="title">{{ member.name }}@if (member.isOwn) { (du) }</span>
-            </span>
-        </div>
-        } @empty {
-        <div class="row static">
-            <span class="body"><span class="sub">Noch niemand in dieser Gruppe.</span></span>
-        </div>
-        }
-    </div>
-
     @for (section of sections(); track section.label) {
     <p class="cap"><span>{{ section.label }}</span><span>{{ section.rows.length }}</span></p>
     <div class="list">
@@ -130,63 +127,6 @@
     </div>
     }
 </div>
-
-@if (addPersonOpen()) {
-<div class="scrim" (click)="addPersonOpen.set(false)"></div>
-<div
-    class="sheet"
-    role="dialog"
-    aria-modal="true"
-    aria-label="Person hinzufügen"
-    (keydown.escape)="addPersonOpen.set(false)"
->
-    <h2>Person hinzufügen</h2>
-    <label for="person-name">Name</label>
-    <input
-        #personField
-        id="person-name"
-        type="text"
-        [ngModel]="newPersonName()"
-        (ngModelChange)="newPersonName.set($event)"
-        (keydown.enter)="addPerson()"
-        placeholder="z. B. Bob"
-        autocomplete="off"
-    />
-    <p class="hint">
-        Diese Person braucht kein eigenes Konto. Wer sich selbst anmelden kann, kommt besser über „Einladen“ in die
-        Gruppe.
-    </p>
-    <div class="actions">
-        <button type="button" class="ghost" (click)="addPersonOpen.set(false)">Abbrechen</button>
-        <button
-            type="button"
-            class="primary"
-            [disabled]="!newPersonName().trim() || addingPerson()"
-            (click)="addPerson()"
-        >
-            Hinzufügen
-        </button>
-    </div>
-</div>
-} @if (inviteOpen()) {
-<div class="scrim" (click)="inviteOpen.set(false)"></div>
-<div class="sheet" role="dialog" aria-modal="true" aria-label="Einladen" (keydown.escape)="inviteOpen.set(false)">
-    <h2>Einladen</h2>
-    @if (inviteLink(); as link) {
-    <p class="hint">Wer diesen Link öffnet und sich anmeldet, wird Mitglied von {{ g.name }}.</p>
-    <p class="link" #linkField>{{ link }}</p>
-    <div class="actions">
-        <button type="button" class="ghost" (click)="inviteOpen.set(false)">Schließen</button>
-        <button type="button" class="primary" (click)="copyLink()">{{ copied() ? 'Kopiert' : 'Link kopieren' }}</button>
-        @if (canShare) {
-        <button type="button" class="primary" (click)="shareLink()">Teilen</button>
-        }
-    </div>
-    } @else {
-    <p class="hint">Einladungslink wird vorbereitet …</p>
-    }
-</div>
-}
 
 <button class="fab" type="button" (click)="newExpense()" aria-label="Ausgabe erfassen">
     <app-icon name="plus" [size]="22" />

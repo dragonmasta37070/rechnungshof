@@ -11,7 +11,7 @@ import {
 import { FormsModule } from "@angular/forms";
 import { Router, RouterLink } from "@angular/router";
 
-import { Api } from "../../api/api";
+import { Api, apiMessage } from "../../api/api";
 import { balancesFor } from "../../domain/balances";
 import { plural } from "../../domain/format";
 import { Store } from "../../domain/store";
@@ -57,6 +57,9 @@ export class Groups {
             return {
                 group,
                 balance,
+                // Without an account link there is no balance to show — a 0,00 €
+                // here read as "you are square" to someone who had paid for all of it.
+                linked: own != null,
                 members: plural(
                     this.store.accountsOf(group.id).filter((a) => a.type === "personal").length,
                     "Mitglied",
@@ -73,9 +76,45 @@ export class Groups {
         })
     );
 
+    protected readonly answering = signal<number | null>(null);
+
     open(): void {
         this.newName.set("");
         this.sheetOpen.set(true);
+    }
+
+    /** Accepts an invite addressed to this user and drops them into the group. */
+    accept(inviteId: number, token: string): void {
+        if (this.answering() !== null) {
+            return;
+        }
+        this.answering.set(inviteId);
+        this.store.notice.set(null);
+        this.api.joinGroup(token).subscribe({
+            next: (group) =>
+                this.store.load().subscribe(() => {
+                    this.answering.set(null);
+                    void this.router.navigate(["/groups", group.id]);
+                }),
+            error: (error: unknown) => {
+                this.answering.set(null);
+                this.store.notice.set(apiMessage(error) ?? "Beitreten fehlgeschlagen.");
+            },
+        });
+    }
+
+    decline(inviteId: number): void {
+        if (this.answering() !== null) {
+            return;
+        }
+        this.answering.set(inviteId);
+        this.api.declineInvite(inviteId).subscribe({
+            next: () => this.store.refreshInvites().subscribe(() => this.answering.set(null)),
+            error: () => {
+                this.answering.set(null);
+                this.store.notice.set("Einladung konnte nicht abgelehnt werden.");
+            },
+        });
     }
 
     create(): void {

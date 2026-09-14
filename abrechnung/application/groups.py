@@ -18,6 +18,7 @@ from abrechnung.domain.groups import (
     GroupLog,
     GroupMember,
     GroupPreview,
+    PendingInvite,
 )
 from abrechnung.domain.users import User
 from abrechnung.util import timed_cache
@@ -111,6 +112,71 @@ class GroupService(Service[Config]):
 
     @with_db_transaction
     @requires_group_permissions(requires_write=True)
+    async def invite_user(self, *, conn: Connection, user: User, group_id: int, username: str) -> int:
+        """Invite one named person, who has to accept before they are a member."""
+        if user.is_guest_user:
+            raise AccessDenied("guest users are not allowed to create group invites")
+
+        invited = await conn.fetchrow(
+            "select id, username from usr where lower(username) = lower($1) and not deleted and not is_guest_user",
+            username,
+        )
+        if invited is None:
+            raise InvalidArgument("Benutzer nicht gefunden")
+
+        is_member = await conn.fetchval(
+            "select exists (select from group_membership where group_id = $1 and user_id = $2)",
+            group_id,
+            invited["id"],
+        )
+        if is_member:
+            raise InvalidArgument("Ist bereits Mitglied")
+
+        already_invited = await conn.fetchval(
+            "select exists (select from group_invite where group_id = $1 and invited_user_id = $2 "
+            "and (valid_until is null or valid_until > now()))",
+            group_id,
+            invited["id"],
+        )
+        if already_invited:
+            raise InvalidArgument("Bereits eingeladen")
+
+        await create_group_log(conn=conn, group_id=group_id, user=user, type="invite-created")
+        return await conn.fetchval(
+            "insert into group_invite (group_id, description, created_by, valid_until, single_use, join_as_editor, "
+            "invited_user_id) values ($1, $2, $3, null, true, true, $4) returning id",
+            group_id,
+            invited["username"],
+            user.id,
+            invited["id"],
+        )
+
+    @with_db_transaction
+    async def list_pending_invites(self, *, conn: Connection, user: User) -> list[PendingInvite]:
+        return await conn.fetch_many(
+            PendingInvite,
+            "select gi.id, gi.token::text as token, gi.group_id, g.name as group_name, "
+            "g.description as group_description, g.currency_identifier, inviter.username as invited_by_username, "
+            "gi.valid_until "
+            "from group_invite gi "
+            "join grp g on g.id = gi.group_id "
+            "join usr inviter on inviter.id = gi.created_by "
+            "where gi.invited_user_id = $1 and (gi.valid_until is null or gi.valid_until > now())",
+            user.id,
+        )
+
+    @with_db_transaction
+    async def decline_invite(self, *, conn: Connection, user: User, invite_id: int):
+        deleted_id = await conn.fetchval(
+            "delete from group_invite where id = $1 and invited_user_id = $2 returning id",
+            invite_id,
+            user.id,
+        )
+        if not deleted_id:
+            raise AccessDenied("This invite is not addressed to you")
+
+    @with_db_transaction
+    @requires_group_permissions(requires_write=True)
     async def delete_invite(
         self,
         *,
@@ -153,8 +219,12 @@ class GroupService(Service[Config]):
     async def join_group(self, *, conn: Connection, user: User, invite_token: str) -> int:
         invite = await conn.fetchrow(
             "select id, group_id, created_by, single_use, join_as_editor from group_invite gi "
-            "where gi.token = $1 and (gi.valid_until is null or gi.valid_until > now())",
+            "where gi.token = $1 and (gi.valid_until is null or gi.valid_until > now()) "
+            # An invite addressed to someone is theirs alone — the token leaking
+            # must not let a third party into the group.
+            "and (gi.invited_user_id is null or gi.invited_user_id = $2)",
             invite_token,
+            user.id,
         )
         if not invite:
             raise AccessDenied("Invalid invite token")
@@ -401,8 +471,11 @@ class GroupService(Service[Config]):
             "inv.single_use as invite_single_use, false as is_already_member "
             "from grp "
             "join group_invite inv on grp.id = inv.group_id "
-            "where inv.token = $1",
+            # Same guard as join_group: a named invite is invisible to everyone
+            # else, including anonymous visitors ($2 is then null).
+            "where inv.token = $1 and (inv.invited_user_id is null or inv.invited_user_id = $2)",
             invite_token,
+            user.id if user else None,
         )
         if not group:
             raise AccessDenied("invalid invite token to preview group")
@@ -420,9 +493,11 @@ class GroupService(Service[Config]):
     async def list_invites(self, *, conn: Connection, user: User, group_id: int) -> list[GroupInvite]:
         return await conn.fetch_many(
             GroupInvite,
-            "select id, case when created_by = $1 then token::text else null end as token, description, created_by, "
-            "valid_until, single_use, join_as_editor "
+            "select gi.id, case when gi.created_by = $1 then gi.token::text else null end as token, gi.description, "
+            "gi.created_by, gi.valid_until, gi.single_use, gi.join_as_editor, gi.invited_user_id, "
+            "invited.username as invited_username "
             "from group_invite gi "
+            "left join usr invited on invited.id = gi.invited_user_id "
             "where gi.group_id = $2",
             user.id,
             group_id,
@@ -433,10 +508,12 @@ class GroupService(Service[Config]):
     async def get_invite(self, *, conn: Connection, user: User, group_id: int, invite_id: int) -> GroupInvite:
         return await conn.fetch_one(
             GroupInvite,
-            "select id, case when created_by = $1 then token::text else null end as token, description, created_by, "
-            "valid_until, single_use, join_as_editor "
+            "select gi.id, case when gi.created_by = $1 then gi.token::text else null end as token, gi.description, "
+            "gi.created_by, gi.valid_until, gi.single_use, gi.join_as_editor, gi.invited_user_id, "
+            "invited.username as invited_username "
             "from group_invite gi "
-            "where gi.group_id = $2 and id = $3",
+            "left join usr invited on invited.id = gi.invited_user_id "
+            "where gi.group_id = $2 and gi.id = $3",
             user.id,
             group_id,
             invite_id,

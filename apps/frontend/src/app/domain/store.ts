@@ -1,7 +1,7 @@
 import { computed, inject, Injectable, signal } from "@angular/core";
-import { forkJoin, of, switchMap, tap } from "rxjs";
+import { forkJoin, map, of, switchMap, tap } from "rxjs";
 
-import { Api, ClearingAccount, Group, PersonalAccount, Transaction, User } from "../api/api";
+import { Api, ClearingAccount, Group, PendingInvite, PersonalAccount, Transaction, User } from "../api/api";
 import type { GroupLedger } from "./balances";
 
 type AccountLike = PersonalAccount | ClearingAccount;
@@ -26,6 +26,8 @@ export class Store {
     readonly profile = signal<User | null>(null);
     readonly groups = signal<Group[]>([]);
     readonly data = signal<Record<number, GroupData>>({});
+    /** Invites addressed to this user that they have neither accepted nor declined. */
+    readonly pendingInvites = signal<PendingInvite[]>([]);
     readonly loading = signal(false);
 
     /**
@@ -88,7 +90,9 @@ export class Store {
 
         return this.api.profile().pipe(
             tap((user) => this.profile.set(user)),
-            switchMap(() => this.api.groups()),
+            switchMap(() => forkJoin({ groups: this.api.groups(), invites: this.api.pendingInvites() })),
+            tap(({ invites }) => this.pendingInvites.set(invites)),
+            map(({ groups }) => groups),
             tap((groups) => this.groups.set(groups)),
             switchMap((groups) =>
                 groups.length === 0
@@ -110,6 +114,10 @@ export class Store {
                 },
             })
         );
+    }
+
+    refreshInvites() {
+        return this.api.pendingInvites().pipe(tap((invites) => this.pendingInvites.set(invites)));
     }
 
     /** Re-reads one group after a write, without refetching everything. */
