@@ -59,6 +59,7 @@ export class Groups {
                 balance,
                 // Without an account link there is no balance to show — a 0,00 €
                 // here read as "you are square" to someone who had paid for all of it.
+                // The row still opens the group, where the question is asked.
                 linked: own != null,
                 members: plural(
                     this.store.accountsOf(group.id).filter((a) => a.type === "personal").length,

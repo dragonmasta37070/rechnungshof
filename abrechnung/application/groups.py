@@ -270,8 +270,40 @@ class GroupService(Service[Config]):
             await conn.execute("delete from group_invite where id = $1", invite["id"])
         return group["id"]
 
+    @staticmethod
+    async def _link_obvious_accounts(conn: Connection, user: User):
+        """Claims the one account that can only be this user, in every group where they own none.
+
+        People add themselves as a "person" long before anyone explains
+        `owned_account_id`, and a membership without it has no balance at all —
+        the group reads 0,00 € for someone who paid for everything. When exactly
+        one free personal account in a group carries the user's own login name,
+        there is nothing to ask about, so it is linked instead of asked.
+        Anything less obvious (no match, or two of them) is left alone.
+        """
+        await conn.execute(
+            "with candidate as ("
+            "    select gm.group_id, a.account_id"
+            "    from group_membership gm"
+            "        join usr u on u.id = gm.user_id"
+            # The accounts listing reads the current state, not the raw history:
+            # a renamed or deleted account must match on what it is now.
+            "        join account_state_valid_at() a on a.group_id = gm.group_id"
+            "            and a.type = 'personal' and not a.deleted and lower(a.name) = lower(u.username)"
+            "    where gm.user_id = $1 and gm.owned_account_id is null"
+            "        and not exists (select from group_membership other"
+            "            where other.group_id = gm.group_id and other.owned_account_id = a.account_id)"
+            "), unambiguous as ("
+            "    select group_id, min(account_id) as account_id from candidate group by group_id having count(*) = 1"
+            ") "
+            "update group_membership gm set owned_account_id = c.account_id from unambiguous c "
+            "where gm.user_id = $1 and gm.group_id = c.group_id and gm.owned_account_id is null",
+            user.id,
+        )
+
     @with_db_transaction
     async def list_groups(self, *, conn: Connection, user: User) -> list[Group]:
+        await self._link_obvious_accounts(conn=conn, user=user)
         return await conn.fetch_many(
             Group,
             "select g.*, gm.is_owner, gm.can_write, gm.owned_account_id from grp as g join group_membership gm on g.id = gm.group_id "

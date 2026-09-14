@@ -30,23 +30,10 @@
             <app-icon [name]="panelOpen() ? 'chevron-up' : 'chevron-down'" [size]="14" />
         </button>
         } @else {
-        <!-- No account link, no balance: showing 0,00 € here read as "you are
-             square" to someone who had paid for everything. -->
-        <div class="balance-toggle">
-            <span class="left">
-                <span class="label">Kein Konto zugeordnet</span>
-                <a class="assign" [routerLink]="['/groups', groupId(), 'settings']">Zuordnen</a>
-            </span>
-            <button
-                type="button"
-                class="peek"
-                (click)="panelOpen.set(!panelOpen())"
-                [attr.aria-expanded]="panelOpen()"
-                aria-label="Salden der Gruppe"
-            >
-                <app-icon [name]="panelOpen() ? 'chevron-up' : 'chevron-down'" [size]="14" />
-            </button>
-        </div>
+        <!-- No account link, no balance. A status label here ("Kein Konto
+             zugeordnet") named the problem and left the user with it; the
+             question has at most a handful of answers, so just ask it. -->
+        <app-own-account-picker [groupId]="groupId()" />
         } @if (panelOpen()) {
         <div class="panel">
             @for (member of members(); track member.id) {

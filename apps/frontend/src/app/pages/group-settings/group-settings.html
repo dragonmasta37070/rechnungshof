@@ -24,37 +24,8 @@
             <span class="body"><span class="title">Du bist: {{ name }}</span></span>
         </div>
     </div>
-    } @else {
-    <p class="hint">
-        Du bist noch keiner Person in dieser Gruppe zugeordnet, deshalb kann dein Saldo nicht berechnet werden.
-    </p>
     } @if (!ownAccountName() || chooserOpen()) {
-    <div class="list">
-        @for (account of freeAccounts(); track account.id) {
-        <button
-            class="row"
-            type="button"
-            [class.suggested]="account.id === suggestedAccountId()"
-            [disabled]="linking()"
-            (click)="claim(account.id)"
-        >
-            <span class="avatar">{{ account.name.charAt(0) }}</span>
-            <span class="body">
-                <span class="title">{{ account.name }}</span>
-                @if (account.id === suggestedAccountId()) {
-                <span class="sub">Gleicher Name wie dein Login</span>
-                }
-            </span>
-            <span class="trail"><span class="note">Das bin ich</span></span>
-        </button>
-        } @empty {
-        <div class="row static">
-            <span class="body">
-                <span class="sub">Keine freie Person — lege unten eine an oder lass dich zuordnen.</span>
-            </span>
-        </div>
-        }
-    </div>
+    <app-own-account-picker [groupId]="groupId()" (linked)="onLinked()" />
     }
 
     <p class="cap"><span>Mitglieder</span><span>{{ memberRows().length }}</span></p>

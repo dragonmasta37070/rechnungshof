@@ -214,25 +214,3 @@
     flex: 1;
     min-width: 0;
 }
-
-/* The unassigned balance card: a real link to the settings page, never a
-   0,00 € that claims the user is square. */
-.assign {
-    color: var(--accent);
-    font-size: 17px;
-    font-weight: 600;
-    text-decoration: none;
-}
-
-.peek {
-    display: grid;
-    place-items: center;
-    flex: none;
-    width: var(--touch-target-min);
-    height: var(--touch-target-min);
-    border: 0;
-    border-radius: var(--radius-md);
-    background: none;
-    color: var(--text-3);
-    cursor: pointer;
-}

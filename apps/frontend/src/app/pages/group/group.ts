@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from "@angular/core";
-import { Router, RouterLink } from "@angular/router";
+import { Router } from "@angular/router";
 
 import { Api, type Transaction } from "../../api/api";
 import { balancesFor, settlementFor } from "../../domain/balances";
@@ -8,6 +8,7 @@ import { effectOf } from "../../domain/share";
 import { Store } from "../../domain/store";
 import { Amount } from "../../ui/amount";
 import { Icon } from "../../ui/icon";
+import { OwnAccountPicker } from "../../ui/own-account-picker";
 
 interface ExpenseRow {
     transaction: Transaction;
@@ -28,7 +29,7 @@ interface DateSection {
 @Component({
     selector: "app-group",
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [RouterLink, Icon, Amount],
+    imports: [Icon, Amount, OwnAccountPicker],
     templateUrl: "./group.html",
     styleUrls: ["../../ui/ui.css", "./group.css"],
 })

@@ -5,7 +5,9 @@ import pytest
 from asyncpg import Pool
 from sftkit.error import InvalidArgument
 
+from abrechnung.application.accounts import AccountService
 from abrechnung.application.groups import GroupService
+from abrechnung.domain.accounts import AccountType, NewAccount
 from abrechnung.domain.groups import Group, GroupInvite, GroupPreview
 from abrechnung.domain.users import User
 
@@ -232,3 +234,68 @@ async def test_delete_group_fails_multiple_members(
 
     with pytest.raises(InvalidArgument):
         await group_service.delete_group(user=dummy_user, group_id=group_id)
+
+
+async def _add_person(account_service: AccountService, group_id: int, user: User, name: str) -> int:
+    return await account_service.create_account(
+        user=user,
+        group_id=group_id,
+        account=NewAccount(type=AccountType.personal, name=name, description=""),
+    )
+
+
+async def _owned_account_id(group_service: GroupService, user: User, group_id: int) -> int | None:
+    groups = await group_service.list_groups(user=user)
+    return next(g.owned_account_id for g in groups if g.id == group_id)
+
+
+async def test_adding_yourself_as_a_person_links_you(
+    group_service: GroupService,
+    account_service: AccountService,
+    dummy_group: Group,
+    dummy_user: User,
+):
+    account_id = await _add_person(account_service, dummy_group.id, dummy_user, dummy_user.username.upper())
+    group = await group_service.get_group(user=dummy_user, group_id=dummy_group.id)
+    assert group.owned_account_id == account_id
+
+
+async def test_list_groups_links_the_obvious_account(
+    group_service: GroupService,
+    account_service: AccountService,
+    dummy_group: Group,
+    dummy_user: User,
+):
+    account_id = await _add_person(account_service, dummy_group.id, dummy_user, dummy_user.username)
+    await group_service.update_member_owned_account(
+        user=dummy_user, group_id=dummy_group.id, member_id=dummy_user.id, owned_account_id=None
+    )
+
+    assert await _owned_account_id(group_service, dummy_user, dummy_group.id) == account_id
+
+
+async def test_list_groups_leaves_a_group_without_a_matching_account_alone(
+    group_service: GroupService,
+    account_service: AccountService,
+    dummy_group: Group,
+    dummy_user: User,
+):
+    await _add_person(account_service, dummy_group.id, dummy_user, "somebody else")
+
+    assert await _owned_account_id(group_service, dummy_user, dummy_group.id) is None
+
+
+async def test_list_groups_leaves_an_ambiguous_group_alone(
+    group_service: GroupService,
+    account_service: AccountService,
+    dummy_group: Group,
+    dummy_user: User,
+):
+    # Two people named like the login: the app cannot know which one is the user.
+    await _add_person(account_service, dummy_group.id, dummy_user, dummy_user.username)
+    await _add_person(account_service, dummy_group.id, dummy_user, dummy_user.username)
+    await group_service.update_member_owned_account(
+        user=dummy_user, group_id=dummy_group.id, member_id=dummy_user.id, owned_account_id=None
+    )
+
+    assert await _owned_account_id(group_service, dummy_user, dummy_group.id) is None

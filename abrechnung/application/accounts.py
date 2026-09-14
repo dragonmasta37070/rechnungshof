@@ -180,6 +180,19 @@ class AccountService(Service[Config]):
                     value,
                 )
 
+        # Adding yourself as a "person" is the same statement as saying who you
+        # are — nobody types their own login name for someone else. Claiming it
+        # here means the group can compute a balance right away instead of
+        # asking a question with one possible answer.
+        if account.type == AccountType.personal and account.name.strip().lower() == user.username.lower():
+            await conn.execute(
+                "update group_membership set owned_account_id = $3 "
+                "where group_id = $1 and user_id = $2 and owned_account_id is null",
+                group_id,
+                user.id,
+                account_id,
+            )
+
         await create_group_log(
             conn=conn,
             group_id=group_id,

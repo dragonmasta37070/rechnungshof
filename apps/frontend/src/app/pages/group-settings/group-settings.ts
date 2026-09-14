@@ -16,6 +16,7 @@ import { of, switchMap } from "rxjs";
 import { Api, apiMessage, type GroupInvite, type GroupMember } from "../../api/api";
 import { Store } from "../../domain/store";
 import { Icon } from "../../ui/icon";
+import { OwnAccountPicker } from "../../ui/own-account-picker";
 
 /**
  * Everything about *who* is in a group, away from the expense list.
@@ -28,7 +29,7 @@ import { Icon } from "../../ui/icon";
 @Component({
     selector: "app-group-settings",
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [FormsModule, Icon],
+    imports: [FormsModule, Icon, OwnAccountPicker],
     templateUrl: "./group-settings.html",
     styleUrls: ["../../ui/ui.css", "./group-settings.css"],
 })
@@ -48,7 +49,6 @@ export class GroupSettings implements OnInit {
 
     /** The account picker is always open while nothing is linked. */
     protected readonly chooserOpen = signal(false);
-    protected readonly linking = signal(false);
 
     protected readonly username = signal("");
     protected readonly inviting = signal(false);
@@ -80,12 +80,6 @@ export class GroupSettings implements OnInit {
     protected readonly ownAccountName = computed(() => {
         const own = this.group()?.owned_account_id;
         return own == null ? null : (this.accounts().find((a) => a.id === own)?.name ?? null);
-    });
-
-    /** The account that most likely is the user: same name as their login. */
-    protected readonly suggestedAccountId = computed(() => {
-        const username = this.store.profile()?.username?.toLowerCase();
-        return this.freeAccounts().find((a) => a.name.toLowerCase() === username)?.id ?? null;
     });
 
     protected readonly memberRows = computed(() => {
@@ -121,31 +115,10 @@ export class GroupSettings implements OnInit {
         void this.router.navigate(["/groups", this.groupId()]);
     }
 
-    /**
-     * Claims an account as "this is me".
-     *
-     * `owned_account_id` lives on the group, not on the account, so the whole
-     * store is reloaded rather than just this group's accounts.
-     */
-    claim(accountId: number): void {
-        const me = this.store.profile()?.id;
-        if (me == null || this.linking()) {
-            return;
-        }
-        this.linking.set(true);
-        this.store.notice.set(null);
-        this.api.setOwnedAccount(this.groupId(), me, accountId).subscribe({
-            next: () =>
-                this.store.load().subscribe(() => {
-                    this.linking.set(false);
-                    this.chooserOpen.set(false);
-                    this.reload();
-                }),
-            error: (error: unknown) => {
-                this.linking.set(false);
-                this.store.notice.set(apiMessage(error) ?? "Zuordnung fehlgeschlagen.");
-            },
-        });
+    /** The picker has linked the user and reloaded the store; catch up the members. */
+    onLinked(): void {
+        this.chooserOpen.set(false);
+        this.reload();
     }
 
     /** Invites someone who has their own login, by username. */

@@ -403,8 +403,13 @@ describe("group invites", () => {
         TestBed.inject(Store).groups.set([group(1, "WG Sonnenweg", null)]);
         await fixture.whenStable();
 
+        // The picker loads the members itself; the settings page's own call was
+        // already flushed by openSettings.
+        TestBed.inject(HttpTestingController).expectOne("/api/v1/groups/1/members").flush([]);
+        await fixture.whenStable();
+
         const rendered = text(fixture);
-        expect(rendered).toContain("Du bist noch keiner Person in dieser Gruppe zugeordnet");
+        expect(rendered).toContain("Wer bist du in dieser Gruppe?");
         expect(rendered).toContain("Das bin ich");
         // The account named like the login is the obvious candidate.
         expect(rendered).toContain("Gleicher Name wie dein Login");
@@ -414,21 +419,26 @@ describe("group invites", () => {
 describe("no account linked", () => {
     afterEach(() => TestBed.resetTestingModule());
 
-    it("group view offers to assign instead of claiming a zero balance", async () => {
+    it("group view asks who the user is instead of claiming a zero balance", async () => {
         const fixture = await setup<GroupView>(GroupView, { id: "1" }, false);
         const store = TestBed.inject(Store);
         configureStore(store);
         store.groups.set([group(1, "WG Sonnenweg", null)]);
         await fixture.whenStable();
+        TestBed.inject(HttpTestingController).expectOne("/api/v1/groups/1/members").flush([]);
+        await fixture.whenStable();
 
         const rendered = text(fixture);
-        expect(rendered).toContain("Kein Konto zugeordnet");
-        expect(rendered).toContain("Zuordnen");
+        // A question with the answers as buttons, not a status label the user
+        // then has to go and act on somewhere else.
+        expect(rendered).toContain("Wer bist du in dieser Gruppe?");
+        expect(rendered).toContain("Das bin ich");
+        expect(rendered).not.toContain("Kein Konto zugeordnet");
         // The balance card is gone entirely rather than reading 0,00 €.
         expect(rendered).not.toContain("Dein Saldo");
     });
 
-    it("group list says the group is unassigned instead of showing 0,00", async () => {
+    it("group list asks who the user is instead of showing 0,00", async () => {
         const fixture = await setup(Groups, {}, false);
         const store = TestBed.inject(Store);
         configureStore(store);
@@ -436,7 +446,7 @@ describe("no account linked", () => {
         await fixture.whenStable();
 
         const rendered = text(fixture);
-        expect(rendered).toContain("nicht zugeordnet");
+        expect(rendered).toContain("Wer bist du?");
         expect(rendered).not.toContain("0,00");
     });
 });

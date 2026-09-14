@@ -42,23 +42,6 @@
     text-align: center;
 }
 
-.page > .hint {
-    margin: 0 0 var(--space-3);
-    color: var(--text-3);
-    font-size: 13px;
-}
-
-/* The account whose name matches the login: the one the user almost certainly
-   wants, so it is marked rather than left to be found. */
-.row.suggested {
-    background: var(--elevated);
-}
-
-.row:disabled {
-    opacity: 0.5;
-    cursor: default;
-}
-
 .invite-form label {
     display: block;
     margin-bottom: var(--space-2);
