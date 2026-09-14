@@ -65,7 +65,7 @@ async def api(db_pool: Pool) -> AsyncIterator[httpx.AsyncClient]:
 
     # Only the network call is replaced. Signature, issuer, audience and expiry
     # are still checked by the real validator on every request.
-    validator._fetch_jwks = _fake_fetch  # type: ignore[method-assign]
+    validator._fetch_jwks = _fake_fetch  # type: ignore[method-assign]  # pylint: disable=protected-access
 
     group_service = GroupService(db_pool=db_pool, config=TEST_CONFIG)
     account_service = AccountService(db_pool=db_pool, config=TEST_CONFIG)

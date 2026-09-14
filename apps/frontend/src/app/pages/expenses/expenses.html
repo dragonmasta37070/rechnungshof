@@ -44,11 +44,7 @@
                     <!-- A settlement you paid has no share for you, but calling that
                          "nicht beteiligt" on an expense you funded is simply wrong. -->
                     @if (row.ownShare !== null) { Dein Anteil
-                    <app-amount
-                        [value]="row.ownShare"
-                        [currency]="row.group.currency_identifier"
-                        [plain]="true"
-                    />
+                    <app-amount [value]="row.ownShare" [currency]="row.group.currency_identifier" [plain]="true" />
                     } @else if (row.ownPayment) { von dir bezahlt } @else { nicht beteiligt }
                 </span>
             </span>

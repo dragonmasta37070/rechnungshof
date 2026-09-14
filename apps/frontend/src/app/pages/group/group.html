@@ -109,11 +109,7 @@
                 @if (row.ownShare !== null) {
                 <span class="note">
                     Dein Anteil
-                    <app-amount
-                        [value]="row.ownShare"
-                        [currency]="g.currency_identifier"
-                        [plain]="true"
-                    />
+                    <app-amount [value]="row.ownShare" [currency]="g.currency_identifier" [plain]="true" />
                 </span>
                 }
             </span>
