@@ -5,6 +5,12 @@ on:
         branches: [main]
     workflow_dispatch:
 
+# Two runs pushing `latest` at once can interleave — one run's api image
+# with the other run's frontend image ended up on prod. Queue them instead.
+concurrency:
+    group: deploy
+    cancel-in-progress: false
+
 env:
     REGISTRY: ghcr.io
     IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}/rechnungshof
