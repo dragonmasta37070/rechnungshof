@@ -1,12 +1,14 @@
 import { HttpClient, HttpErrorResponse, provideHttpClient, withInterceptors } from "@angular/common/http";
 import { HttpTestingController, provideHttpClientTesting } from "@angular/common/http/testing";
 import { TestBed } from "@angular/core/testing";
-import { Router } from "@angular/router";
+import { provideRouter, Router, UrlTree } from "@angular/router";
 import { OidcSecurityService } from "angular-auth-oidc-client";
-import { firstValueFrom, of } from "rxjs";
+import { firstValueFrom, Observable, of } from "rxjs";
 
 import { oidcConfigLoader } from "../app.config";
-import { AppConfig, appConfig$, resetAppConfigCache } from "./app-config";
+import { Login } from "../pages/login/login";
+import { AppConfig, appConfig$, AppConfigService, resetAppConfigCache } from "./app-config";
+import { authGuard } from "./auth.guard";
 import { authInterceptor } from "./auth.interceptor";
 import { ProviderStatusService } from "./provider-status";
 
@@ -18,6 +20,7 @@ const CONFIG: AppConfig = {
     oidc: {
         issuer: "https://auth.moretta.at/application/o/rechnungshof/",
         client_id: "the-client-id",
+        register_flow: "default-registration-flow",
     },
 };
 
@@ -188,5 +191,88 @@ describe("authInterceptor", () => {
         await done;
 
         expect(providerStatus.isUnavailable()).toBe(false);
+    });
+});
+
+describe("authGuard", () => {
+    beforeEach(() => {
+        sessionStorage.clear();
+        TestBed.configureTestingModule({
+            providers: [
+                provideRouter([]),
+                { provide: OidcSecurityService, useValue: { isAuthenticated$: of({ isAuthenticated: false }) } },
+            ],
+        });
+    });
+
+    it("sends the user to /login with the auto marker, remembering where they were going", async () => {
+        // The marker is what lets the login page skip its own button: no session
+        // yet, but nothing was refused either.
+        const result = await firstValueFrom(
+            TestBed.runInInjectionContext(() =>
+                authGuard({} as never, { url: "/groups/7" } as never)
+            ) as Observable<UrlTree>
+        );
+
+        expect(TestBed.inject(Router).serializeUrl(result)).toBe("/login?auto=1");
+        expect(sessionStorage.getItem("rechnungshof.returnUrl")).toBe("/groups/7");
+    });
+});
+
+describe("login page", () => {
+    let authorizeCalls: number;
+
+    async function render(auto?: string) {
+        authorizeCalls = 0;
+        TestBed.configureTestingModule({
+            providers: [
+                {
+                    provide: OidcSecurityService,
+                    useValue: {
+                        preloadAuthWellKnownDocument: () => of({}),
+                        authorize: () => {
+                            authorizeCalls += 1;
+                        },
+                    },
+                },
+                { provide: AppConfigService, useValue: { get: () => CONFIG } },
+            ],
+        });
+
+        const fixture = TestBed.createComponent(Login);
+        if (auto !== undefined) {
+            fixture.componentRef.setInput("auto", auto);
+        }
+        await fixture.whenStable();
+        return fixture;
+    }
+
+    afterEach(() => TestBed.resetTestingModule());
+
+    it("starts the sign-in by itself when the guard sent the user here", async () => {
+        const fixture = await render("1");
+
+        expect(authorizeCalls).toBe(1);
+        expect((fixture.nativeElement as HTMLElement).textContent).toContain("Anmeldung wird gestartet");
+    });
+
+    it("waits for the button without the marker", async () => {
+        // No marker means the 401 interceptor, a failed callback, or a
+        // hand-typed /login — auto-starting any of those can loop.
+        const fixture = await render();
+
+        expect(authorizeCalls).toBe(0);
+        expect((fixture.nativeElement as HTMLElement).textContent).toContain("Mit Authentik anmelden");
+    });
+
+    it("links registration at the provider's enrollment flow", async () => {
+        const fixture = await render();
+        const link = (fixture.nativeElement as HTMLElement).querySelector("a") as HTMLAnchorElement;
+
+        expect(link.getAttribute("href")).toBe(
+            `https://auth.moretta.at/if/flow/default-registration-flow/?next=${encodeURIComponent(
+                `${window.location.origin}/`
+            )}`
+        );
     });
 });

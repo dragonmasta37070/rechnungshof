@@ -42,8 +42,9 @@ export namespace Schemas {
     /**
      * What a browser client needs to start the PKCE flow itself.
      *
-     * Both values are public by definition: the client id travels in every
-     * authorization URL, and the issuer is the provider's own discovery identity.
+     * All three values are public by definition: the client id travels in every
+     * authorization URL, the issuer is the provider's own discovery identity, and
+     * the enrollment flow slug is part of a URL anyone may open.
      * Nothing secret is exposed here — the audience/client id is not a credential,
      * which is exactly why the provider is configured as a public client.
      *
@@ -51,7 +52,7 @@ export namespace Schemas {
      * artifact deployable against dev, staging and production: an Angular build is
      * static, so container env vars never reach the browser on their own.
      */
-    export type OIDCFrontendConfig = { issuer: string; client_id: string };
+    export type OIDCFrontendConfig = { issuer: string; client_id: string; register_flow: string };
     export type FrontendConfig = {
         messages?: (Array<ServiceMessage> | null) | undefined;
         imprint_url?: (string | null) | undefined;

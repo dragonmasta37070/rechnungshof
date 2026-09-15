@@ -60,6 +60,11 @@ class OIDCConfig(BaseModel):
     audience: str
     jwks_url: str
 
+    # Slug of the provider's enrollment flow. There is no registration in this
+    # app — accounts appear on first login — so "Registrieren" is a plain link
+    # into Authentik's own flow.
+    register_flow: str = "default-registration-flow"
+
     # Only asymmetric algorithms. Allowing an HMAC algorithm here would let an
     # attacker sign a token with the public JWKS key and have it accepted.
     algorithms: List[str] = ["RS256", "RS384", "RS512", "ES256", "ES384", "ES512"]

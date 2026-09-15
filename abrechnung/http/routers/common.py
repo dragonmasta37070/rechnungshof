@@ -41,8 +41,9 @@ async def get_version():
 class OIDCFrontendConfig(BaseModel):
     """What a browser client needs to start the PKCE flow itself.
 
-    Both values are public by definition: the client id travels in every
-    authorization URL, and the issuer is the provider's own discovery identity.
+    All three values are public by definition: the client id travels in every
+    authorization URL, the issuer is the provider's own discovery identity, and
+    the enrollment flow slug is part of a URL anyone may open.
     Nothing secret is exposed here — the audience/client id is not a credential,
     which is exactly why the provider is configured as a public client.
 
@@ -53,6 +54,7 @@ class OIDCFrontendConfig(BaseModel):
 
     issuer: str
     client_id: str
+    register_flow: str
 
 
 class FrontendConfig(BaseModel):
@@ -75,6 +77,7 @@ async def get_frontend_config(config: Config = Depends(get_config)):
         oidc=OIDCFrontendConfig(
             issuer=config.oidc.issuer,
             client_id=config.oidc.audience,
+            register_flow=config.oidc.register_flow,
         ),
     )
     return cfg

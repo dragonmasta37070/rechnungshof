@@ -20,7 +20,11 @@ export const authGuard: CanActivateFn = (_route, state) => {
 
     const toLogin = () => {
         rememberReturnUrl(state.url);
-        return router.createUrlTree(["/login"]);
+        // `auto=1` says "nobody has been refused anything yet, this is just a
+        // visit without a session" — the login page may then start the flow on
+        // its own. The 401 interceptor and a failed callback navigate to /login
+        // without it, so a backend that rejects a valid token cannot loop.
+        return router.createUrlTree(["/login"], { queryParams: { auto: "1" } });
     };
 
     return oidc.isAuthenticated$.pipe(

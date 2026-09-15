@@ -3429,15 +3429,20 @@
                     "client_id": {
                         "type": "string",
                         "title": "Client Id"
+                    },
+                    "register_flow": {
+                        "type": "string",
+                        "title": "Register Flow"
                     }
                 },
                 "type": "object",
                 "required": [
                     "issuer",
-                    "client_id"
+                    "client_id",
+                    "register_flow"
                 ],
                 "title": "OIDCFrontendConfig",
-                "description": "What a browser client needs to start the PKCE flow itself.\n\nBoth values are public by definition: the client id travels in every\nauthorization URL, and the issuer is the provider's own discovery identity.\nNothing secret is exposed here \u2014 the audience/client id is not a credential,\nwhich is exactly why the provider is configured as a public client.\n\nServing these instead of baking them into the bundle is what keeps one built\nartifact deployable against dev, staging and production: an Angular build is\nstatic, so container env vars never reach the browser on their own."
+                "description": "What a browser client needs to start the PKCE flow itself.\n\nAll three values are public by definition: the client id travels in every\nauthorization URL, the issuer is the provider's own discovery identity, and\nthe enrollment flow slug is part of a URL anyone may open.\nNothing secret is exposed here \u2014 the audience/client id is not a credential,\nwhich is exactly why the provider is configured as a public client.\n\nServing these instead of baking them into the bundle is what keeps one built\nartifact deployable against dev, staging and production: an Angular build is\nstatic, so container env vars never reach the browser on their own."
             },
             "PendingInvite": {
                 "properties": {

@@ -287,5 +287,7 @@ async def test_public_endpoints_need_no_token(api: httpx.AsyncClient):
     assert response.status_code == 200
     assert response.json()["oidc"]["issuer"] == TEST_ISSUER
     assert response.json()["oidc"]["client_id"] == TEST_AUDIENCE
+    # The login screen builds the "Registrieren" link from this.
+    assert response.json()["oidc"]["register_flow"] == "default-registration-flow"
 
     assert (await api.get("/api/version")).status_code == 200

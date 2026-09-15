@@ -6,6 +6,8 @@ import { firstValueFrom, Observable, retry, shareReplay } from "rxjs";
 export interface OidcConfig {
     issuer: string;
     client_id: string;
+    /** Slug of Authentik's enrollment flow, for the "Registrieren" link. */
+    register_flow: string;
 }
 
 /** `GET /api/config` — served unauthenticated by the backend. */
