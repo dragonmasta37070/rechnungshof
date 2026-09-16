@@ -5,6 +5,7 @@ from fastapi import Depends, Request
 
 from abrechnung.application.accounts import AccountService
 from abrechnung.application.export_import import ExportImportService
+from abrechnung.application.friends import FriendService
 from abrechnung.application.groups import GroupService
 from abrechnung.application.transactions import TransactionService
 from abrechnung.application.users import UserService
@@ -45,6 +46,10 @@ def get_user_service(request: Request) -> UserService:
 
 def get_group_service(request: Request) -> GroupService:
     return request.state.context.group_service
+
+
+def get_friend_service(request: Request) -> FriendService:
+    return request.state.context.friend_service
 
 
 def get_account_service(request: Request) -> AccountService:

@@ -28,6 +28,7 @@ from sftkit.http._context import ContextMiddleware
 
 from abrechnung.application.accounts import AccountService
 from abrechnung.application.export_import import ExportImportService
+from abrechnung.application.friends import FriendService
 from abrechnung.application.groups import GroupService
 from abrechnung.application.transactions import TransactionService
 from abrechnung.application.users import UserService
@@ -76,6 +77,7 @@ async def api(db_pool: Pool) -> AsyncIterator[httpx.AsyncClient]:
         transaction_service=transaction_service,
         account_service=account_service,
         group_service=group_service,
+        friend_service=FriendService(db_pool=db_pool, config=TEST_CONFIG),
         export_import_service=ExportImportService(
             db_pool=db_pool,
             config=TEST_CONFIG,

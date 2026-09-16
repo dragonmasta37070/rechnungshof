@@ -5,12 +5,13 @@ import { provideRouter } from "@angular/router";
 import { OidcSecurityService } from "angular-auth-oidc-client";
 import { of } from "rxjs";
 
-import type { Group, GroupInvite, PersonalAccount, Transaction, User } from "../api/api";
+import type { FriendsOverview, Group, GroupInvite, PersonalAccount, Transaction, User } from "../api/api";
 import { AppConfigService } from "../core/app-config";
 import { Store } from "../domain/store";
 import { Balances } from "./balances/balances";
 import { Editor } from "./editor/editor";
 import { Expenses } from "./expenses/expenses";
+import { Friends } from "./friends/friends";
 import { GroupSettings } from "./group-settings/group-settings";
 import { GroupView } from "./group/group";
 import { Groups } from "./groups/groups";
@@ -510,5 +511,76 @@ describe("incoming invites", () => {
         const http = TestBed.inject(HttpTestingController);
         const req = http.expectOne("/api/v1/groups/join");
         expect(req.request.body).toEqual({ invite_token: "tok" });
+    });
+});
+
+describe("friends", () => {
+    afterEach(() => TestBed.resetTestingModule());
+
+    it("shows an incoming request with its answers, and accepts it by id", async () => {
+        const fixture = await setup<Friends>(Friends);
+        const overview: FriendsOverview = {
+            friends: [],
+            incoming: [{ id: 4, user_id: 9, username: "test1", created_at: "2026-09-01T00:00:00Z" }],
+            outgoing: [],
+        };
+        TestBed.inject(Store).friends.set(overview);
+        await fixture.whenStable();
+
+        const rendered = text(fixture);
+        expect(rendered).toContain("Anfragen an dich");
+        expect(rendered).toContain("test1");
+        expect(rendered).toContain("Annehmen");
+        expect(rendered).toContain("Ablehnen");
+        // Nobody is a friend yet, so the empty state stands.
+        expect(rendered).toContain("Noch keine Freunde");
+
+        (fixture.componentInstance as unknown as { accept(id: number): void }).accept(4);
+        const req = TestBed.inject(HttpTestingController).expectOne("/api/v1/friends/requests/4/accept");
+        expect(req.request.method).toBe("POST");
+    });
+});
+
+describe("inviting a friend into a group", () => {
+    afterEach(() => TestBed.resetTestingModule());
+
+    it("offers only the friends who are neither members nor already invited", async () => {
+        const fixture = await setup<GroupSettings>(GroupSettings, { id: "1" });
+        const http = TestBed.inject(HttpTestingController);
+        TestBed.inject(Store).friends.set({
+            friends: [
+                { user_id: 9, username: "test1" },
+                { user_id: 10, username: "Marco" },
+                { user_id: 11, username: "test2" },
+            ],
+            incoming: [],
+            outgoing: [],
+        });
+        // marco is a member (matched case-insensitively), test2 has an open invite.
+        http.expectOne("/api/v1/groups/1/members").flush([
+            {
+                user_id: 1,
+                username: "marco",
+                is_owner: true,
+                can_write: true,
+                description: "",
+                joined_at: "",
+                invited_by: null,
+                owned_account_id: ME.id,
+            },
+        ]);
+        http.expectOne("/api/v1/groups/1/invites").flush([
+            invite({ id: 8, invited_user_id: 11, invited_username: "test2" }),
+        ]);
+        await fixture.whenStable();
+
+        const chips = Array.from(
+            (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>(".friend-chips .chip")
+        );
+        expect(chips.map((chip) => chip.textContent?.trim())).toEqual(["test1"]);
+
+        chips[0].click();
+        const req = http.expectOne("/api/v1/groups/1/invites/user");
+        expect(req.request.body).toEqual({ username: "test1" });
     });
 });

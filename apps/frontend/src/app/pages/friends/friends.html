@@ -1,0 +1,117 @@
+<div class="page-title">
+    <h1>Freunde</h1>
+</div>
+
+<div class="page">
+    @if (incoming().length) {
+    <p class="cap"><span>Anfragen an dich</span></p>
+    <div class="list">
+        @for (request of incoming(); track request.id) {
+        <div class="row static">
+            <span class="avatar">{{ request.username.charAt(0) }}</span>
+            <span class="body"><span class="title">{{ request.username }}</span></span>
+            <span class="row-actions">
+                <button type="button" class="primary" [disabled]="busy()" (click)="accept(request.id)">Annehmen</button>
+                <button type="button" class="ghost" [disabled]="busy()" (click)="dismiss(request.id)">Ablehnen</button>
+            </span>
+        </div>
+        }
+    </div>
+    } @if (outgoing().length) {
+    <p class="cap"><span>Gesendete Anfragen</span></p>
+    <div class="list">
+        @for (request of outgoing(); track request.id) {
+        <div class="row static">
+            <span class="avatar">{{ request.username.charAt(0) }}</span>
+            <span class="body">
+                <span class="title">{{ request.username }}</span>
+                <span class="sub">wartet auf Antwort</span>
+            </span>
+            <span class="row-actions">
+                <button type="button" class="ghost" [disabled]="busy()" (click)="dismiss(request.id)">
+                    Zurückziehen
+                </button>
+            </span>
+        </div>
+        }
+    </div>
+    }
+
+    <p class="cap"><span>Freunde</span>@if (friends().length) {<span>{{ friends().length }}</span>}</p>
+    @if (friends().length) {
+    <div class="list">
+        @for (friend of friends(); track friend.user_id) {
+        <div class="row static">
+            <span class="avatar">{{ friend.username.charAt(0) }}</span>
+            <span class="body"><span class="title">{{ friend.username }}</span></span>
+            @if (removing() === friend.user_id) {
+            <span class="row-actions">
+                <span class="confirm">Wirklich entfernen?</span>
+                <button type="button" class="ghost" (click)="removing.set(null)">Abbrechen</button>
+                <button type="button" class="danger" [disabled]="busy()" (click)="remove(friend.user_id)">
+                    Entfernen
+                </button>
+            </span>
+            } @else {
+            <span class="trail">
+                <button type="button" class="cap-action" (click)="removing.set(friend.user_id)">Entfernen</button>
+            </span>
+            }
+        </div>
+        }
+    </div>
+    } @else {
+    <div class="empty">
+        <app-icon name="users" [size]="32" />
+        <strong>Noch keine Freunde</strong>
+        <span>Füge jemanden über den Benutzernamen hinzu oder zeig deinen QR-Code.</span>
+    </div>
+    }
+
+    <p class="cap"><span>Freund hinzufügen</span></p>
+    <div class="add-form">
+        <label for="friend-username">Benutzername</label>
+        <div class="add-row">
+            <input
+                id="friend-username"
+                type="text"
+                [ngModel]="username()"
+                (ngModelChange)="username.set($event)"
+                (keydown.enter)="add()"
+                placeholder="z. B. test1"
+                autocomplete="off"
+            />
+            <button type="button" class="primary" [disabled]="!username().trim() || adding()" (click)="add()">
+                Anfragen
+            </button>
+        </div>
+        @if (addError(); as error) {
+        <p class="error" role="alert">{{ error }}</p>
+        }
+        <p class="hint">
+            Die Person muss die Anfrage annehmen.
+            <button type="button" class="cap-action" (click)="openQr()">Mein QR-Code</button>
+        </p>
+    </div>
+</div>
+
+@if (qrOpen()) {
+<div class="scrim" (click)="qrOpen.set(false)"></div>
+<div class="sheet" role="dialog" aria-modal="true" aria-label="Mein QR-Code" (keydown.escape)="qrOpen.set(false)">
+    <h2>Mein QR-Code</h2>
+    @if (quickLink(); as link) {
+    <p class="hint">Wer diesen Code scannt und angemeldet ist, wird sofort dein Freund.</p>
+    <canvas #qr class="qr" aria-label="QR-Code mit deinem Freundschaftslink"></canvas>
+    <p class="link" #linkField>{{ link }}</p>
+    <div class="actions">
+        <button type="button" class="ghost" (click)="qrOpen.set(false)">Schließen</button>
+        <button type="button" class="primary" (click)="copyLink()">{{ copied() ? 'Kopiert' : 'Link kopieren' }}</button>
+        @if (canShare) {
+        <button type="button" class="primary" (click)="shareLink()">Teilen</button>
+        }
+    </div>
+    } @else {
+    <p class="hint">QR-Code wird vorbereitet …</p>
+    }
+</div>
+}

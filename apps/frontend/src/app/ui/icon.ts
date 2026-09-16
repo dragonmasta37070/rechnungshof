@@ -13,6 +13,7 @@ export type IconName =
     | "groups"
     | "balance"
     | "user"
+    | "users"
     | "plus"
     | "minus"
     | "chevron-left"
@@ -33,6 +34,7 @@ const PATHS: Record<IconName, string> = {
     groups: "M3 7h8v5H3zM13 7h8v5h-8zM3 14h8v5H3zM13 14h8v5h-8z",
     balance: "M12 4v16M6 8h12M6 8 3 15h6L6 8Zm12 0-3 7h6l-3-7ZM8 20h8",
     user: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4 21a8 8 0 0 1 16 0",
+    users: "M9 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM2 21a7 7 0 0 1 14 0M16 5.3a3.5 3.5 0 0 1 0 6.4M18 21a6 6 0 0 0-2.6-4.9",
     plus: "M12 5v14M5 12h14",
     minus: "M5 12h14",
     "chevron-left": "m15 5-7 7 7 7",

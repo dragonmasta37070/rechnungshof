@@ -46,6 +46,13 @@
                 <a routerLink="/balances" routerLinkActive="active"> <app-icon name="balance" /> Salden </a>
             </li>
             <li>
+                <a routerLink="/friends" routerLinkActive="active">
+                    <app-icon name="users" /> Freunde @if (friendRequests(); as count) {
+                    <span class="count" [attr.aria-label]="count + ' offene Freundschaftsanfragen'">{{ count }}</span>
+                    }
+                </a>
+            </li>
+            <li>
                 <a routerLink="/profile" routerLinkActive="active"> <app-icon name="user" /> Profil </a>
             </li>
         </ul>
@@ -75,6 +82,10 @@
     <a routerLink="/balances" routerLinkActive="active">
         <app-icon name="balance" />
         <span>Salden</span>
+    </a>
+    <a routerLink="/friends" routerLinkActive="active">
+        <app-icon name="users" />
+        <span>Freunde @if (friendRequests(); as count) { <span class="count">{{ count }}</span> }</span>
     </a>
     <a routerLink="/profile" routerLinkActive="active">
         <app-icon name="user" />

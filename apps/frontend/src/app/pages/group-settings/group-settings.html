@@ -86,6 +86,16 @@
     @if (g.can_write) {
     <p class="cap"><span>Einladen</span></p>
     <div class="invite-form">
+        @if (invitableFriends().length) {
+        <label>Freunde</label>
+        <div class="friend-chips">
+            @for (friend of invitableFriends(); track friend.user_id) {
+            <button type="button" class="chip" [disabled]="inviting()" (click)="invite(friend.username)">
+                {{ friend.username }}
+            </button>
+            }
+        </div>
+        }
         <label for="invite-username">Benutzername</label>
         <div class="invite-row">
             <input

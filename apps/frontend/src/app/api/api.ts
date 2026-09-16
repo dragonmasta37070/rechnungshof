@@ -16,6 +16,9 @@ export type SplitMode = Schemas.SplitMode;
 export type GroupInvite = Schemas.GroupInvite;
 export type GroupPreview = Schemas.GroupPreview;
 export type PendingInvite = Schemas.PendingInvite;
+export type FriendUser = Schemas.FriendUser;
+export type FriendRequest = Schemas.FriendRequest;
+export type FriendsOverview = Schemas.FriendsOverview;
 
 /** The backend's own explanation of a rejected request, when it sent one. */
 export function apiMessage(error: unknown): string | null {
@@ -127,6 +130,41 @@ export class Api {
         return this.http.post<GroupMember>(`/api/v1/groups/${groupId}/members/${userId}/owned-account`, {
             owned_account_id: accountId,
         });
+    }
+
+    /** Friends, plus the requests in either direction that nobody has answered. */
+    friends(): Observable<FriendsOverview> {
+        return this.http.get<FriendsOverview>("/api/v1/friends");
+    }
+
+    sendFriendRequest(username: string): Observable<FriendRequest> {
+        return this.http.post<FriendRequest>("/api/v1/friends/requests", { username });
+    }
+
+    acceptFriendRequest(requestId: number): Observable<FriendUser> {
+        return this.http.post<FriendUser>(`/api/v1/friends/requests/${requestId}/accept`, {});
+    }
+
+    /** Declining one addressed to you, and withdrawing one you sent. */
+    deleteFriendRequest(requestId: number): Observable<unknown> {
+        return this.http.delete(`/api/v1/friends/requests/${requestId}`);
+    }
+
+    removeFriend(userId: number): Observable<unknown> {
+        return this.http.delete(`/api/v1/friends/${userId}`);
+    }
+
+    friendQuickLink(): Observable<Schemas.FriendQuickLink> {
+        return this.http.get<Schemas.FriendQuickLink>("/api/v1/friends/quick-link");
+    }
+
+    previewFriendQuick(token: string): Observable<FriendUser> {
+        return this.http.get<FriendUser>(`/api/v1/friends/quick/${token}`);
+    }
+
+    /** Opening someone's quick link is the acceptance; no request is created. */
+    addFriendQuick(token: string): Observable<FriendUser> {
+        return this.http.post<FriendUser>(`/api/v1/friends/quick/${token}`, {});
     }
 
     previewGroup(inviteToken: string): Observable<GroupPreview> {

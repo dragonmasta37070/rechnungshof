@@ -7,6 +7,7 @@ from sftkit.http import Server
 from abrechnung import __version__
 from abrechnung.application.accounts import AccountService
 from abrechnung.application.export_import import ExportImportService
+from abrechnung.application.friends import FriendService
 from abrechnung.application.groups import GroupService
 from abrechnung.application.transactions import TransactionService
 from abrechnung.application.users import UserService
@@ -16,7 +17,7 @@ from abrechnung.database.migrations import check_revision_version, get_database
 
 from . import metrics
 from .context import Context
-from .routers import accounts, auth, common, groups, transactions
+from .routers import accounts, auth, common, friends, groups, transactions
 
 
 def get_server(config: Config):
@@ -30,6 +31,7 @@ def get_server(config: Config):
 
     server.add_router(transactions.router)
     server.add_router(groups.router)
+    server.add_router(friends.router)
     server.add_router(auth.router)
     server.add_router(accounts.router)
     server.add_router(common.router)
@@ -58,6 +60,7 @@ class Api:
         self.transaction_service = TransactionService(db_pool=self.db_pool, config=self.cfg)
         self.account_service = AccountService(db_pool=self.db_pool, config=self.cfg)
         self.group_service = GroupService(db_pool=self.db_pool, config=self.cfg)
+        self.friend_service = FriendService(db_pool=self.db_pool, config=self.cfg)
         self.export_import_service = ExportImportService(
             db_pool=self.db_pool,
             config=self.cfg,
@@ -71,6 +74,7 @@ class Api:
             transaction_service=self.transaction_service,
             account_service=self.account_service,
             group_service=self.group_service,
+            friend_service=self.friend_service,
             export_import_service=self.export_import_service,
             oidc_validator=self.oidc_validator,
         )

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from "@angular/core";
+import { ChangeDetectionStrategy, Component, computed, inject } from "@angular/core";
 import { RouterLink, RouterLinkActive, RouterOutlet } from "@angular/router";
 import { OidcSecurityService } from "angular-auth-oidc-client";
 
@@ -24,6 +24,9 @@ export class Shell {
     private readonly oidc = inject(OidcSecurityService);
     protected readonly store = inject(Store);
     protected readonly providerStatus = inject(ProviderStatusService);
+
+    /** Friend requests waiting for an answer, as a badge on "Freunde". */
+    protected readonly friendRequests = computed(() => this.store.friends()?.incoming.length ?? 0);
 
     constructor() {
         // Every screen under the shell reads from the store, so it is filled once

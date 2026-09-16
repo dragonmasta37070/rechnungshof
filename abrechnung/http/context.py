@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 from abrechnung.application.accounts import AccountService
 from abrechnung.application.export_import import ExportImportService
+from abrechnung.application.friends import FriendService
 from abrechnung.application.groups import GroupService
 from abrechnung.application.transactions import TransactionService
 from abrechnung.application.users import UserService
@@ -21,5 +22,6 @@ class Context:
     transaction_service: TransactionService
     account_service: AccountService
     group_service: GroupService
+    friend_service: FriendService
     export_import_service: ExportImportService
     oidc_validator: OIDCValidator

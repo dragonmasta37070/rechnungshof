@@ -10,6 +10,7 @@ from sftkit.database import DatabaseConfig
 
 from abrechnung.application.accounts import AccountService
 from abrechnung.application.export_import import ExportImportService
+from abrechnung.application.friends import FriendService
 from abrechnung.application.groups import GroupService
 from abrechnung.application.transactions import TransactionService
 from abrechnung.application.users import UserService
@@ -90,6 +91,11 @@ async def user_service(db_pool: Pool) -> UserService:
 @pytest.fixture
 async def group_service(db_pool: Pool) -> GroupService:
     return GroupService(db_pool, config=TEST_CONFIG)
+
+
+@pytest.fixture
+async def friend_service(db_pool: Pool) -> FriendService:
+    return FriendService(db_pool, config=TEST_CONFIG)
 
 
 @pytest.fixture

@@ -101,6 +101,21 @@ export class GroupSettings implements OnInit {
     /** Invites addressed to a person, as opposed to a shareable link. */
     protected readonly pendingInvites = computed(() => this.invites().filter((i) => i.invited_username));
 
+    /**
+     * Friends who are not in this group yet — one tap instead of typing a name.
+     *
+     * Usernames are the only thing members and invites have in common, and the
+     * backend matches them case-insensitively, so this does too.
+     */
+    protected readonly invitableFriends = computed(() => {
+        const taken = new Set(
+            [...this.members().map((m) => m.username), ...this.invites().map((i) => i.invited_username)]
+                .filter((name): name is string => name != null)
+                .map((name) => name.toLowerCase())
+        );
+        return (this.store.friends()?.friends ?? []).filter((f) => !taken.has(f.username.toLowerCase()));
+    });
+
     ngOnInit(): void {
         this.reload();
     }
@@ -126,9 +141,8 @@ export class GroupSettings implements OnInit {
         this.reload();
     }
 
-    /** Invites someone who has their own login, by username. */
-    invite(): void {
-        const username = this.username().trim();
+    /** Invites someone who has their own login, by username — typed, or a friend chip. */
+    invite(username = this.username().trim()): void {
         if (!username || this.inviting()) {
             return;
         }

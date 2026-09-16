@@ -1,7 +1,16 @@
 import { computed, inject, Injectable, signal } from "@angular/core";
 import { forkJoin, map, of, switchMap, tap } from "rxjs";
 
-import { Api, ClearingAccount, Group, PendingInvite, PersonalAccount, Transaction, User } from "../api/api";
+import {
+    Api,
+    ClearingAccount,
+    FriendsOverview,
+    Group,
+    PendingInvite,
+    PersonalAccount,
+    Transaction,
+    User,
+} from "../api/api";
 import type { GroupLedger } from "./balances";
 
 type AccountLike = PersonalAccount | ClearingAccount;
@@ -28,6 +37,8 @@ export class Store {
     readonly data = signal<Record<number, GroupData>>({});
     /** Invites addressed to this user that they have neither accepted nor declined. */
     readonly pendingInvites = signal<PendingInvite[]>([]);
+    /** Friends and open friend requests. Null until the first load finishes. */
+    readonly friends = signal<FriendsOverview | null>(null);
     readonly loading = signal(false);
 
     /**
@@ -127,8 +138,17 @@ export class Store {
 
         return this.api.profile().pipe(
             tap((user) => this.profile.set(user)),
-            switchMap(() => forkJoin({ groups: this.api.groups(), invites: this.api.pendingInvites() })),
-            tap(({ invites }) => this.pendingInvites.set(invites)),
+            switchMap(() =>
+                forkJoin({
+                    groups: this.api.groups(),
+                    invites: this.api.pendingInvites(),
+                    friends: this.api.friends(),
+                })
+            ),
+            tap(({ invites, friends }) => {
+                this.pendingInvites.set(invites);
+                this.friends.set(friends);
+            }),
             map(({ groups }) => groups),
             tap((groups) => this.groups.set(groups)),
             switchMap((groups) =>
@@ -151,6 +171,10 @@ export class Store {
                 },
             })
         );
+    }
+
+    refreshFriends() {
+        return this.api.friends().pipe(tap((friends) => this.friends.set(friends)));
     }
 
     refreshInvites() {

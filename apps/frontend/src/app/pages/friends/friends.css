@@ -1,0 +1,245 @@
+/* Rows, caps and the sheet follow the group settings page; only the QR canvas
+   and the inline remove confirmation are new here. */
+.row.static {
+    cursor: default;
+}
+
+.row.static:hover {
+    background: none;
+}
+
+.avatar {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-pill);
+    background: var(--elevated);
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.row-actions {
+    display: flex;
+    align-items: center;
+    flex: none;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.row-actions button {
+    min-height: var(--touch-target-min);
+    padding: 0 var(--space-3);
+    border-radius: var(--radius-md);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.row-actions .primary {
+    border: 0;
+    background: var(--accent);
+    color: var(--on-accent);
+}
+
+.row-actions .ghost {
+    border: 1px solid var(--border);
+    background: none;
+    color: var(--text-2);
+}
+
+.row-actions .danger {
+    border: 1px solid var(--border);
+    background: none;
+    color: var(--color-error);
+}
+
+.row-actions button:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.row-actions .confirm {
+    color: var(--text-3);
+    font-size: 12px;
+}
+
+.cap-action {
+    min-height: var(--touch-target-min);
+    padding: 0 var(--space-2);
+    margin: calc(var(--space-2) * -1) 0;
+    border: 0;
+    background: none;
+    color: var(--text-2);
+    font: inherit;
+    font-size: 11px;
+    text-transform: none;
+    letter-spacing: 0;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.add-form label {
+    display: block;
+    margin-bottom: var(--space-2);
+    color: var(--text-3);
+    font-size: 12px;
+}
+
+.add-row {
+    display: flex;
+    gap: var(--space-3);
+}
+
+.add-row input {
+    flex: 1;
+    min-width: 0;
+    min-height: 48px;
+    padding: 0 var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--elevated);
+    color: var(--text);
+    font: inherit;
+}
+
+.add-row .primary {
+    flex: none;
+    min-height: 48px;
+    padding: 0 var(--space-4);
+    border: 0;
+    border-radius: var(--radius-md);
+    background: var(--accent);
+    color: var(--on-accent);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.add-row .primary:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.add-form .error {
+    margin: var(--space-3) 0 0;
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    background: rgba(240, 92, 92, 0.16);
+    color: var(--color-error);
+    font-size: 13px;
+}
+
+.add-form .hint {
+    margin: var(--space-3) 0 0;
+    color: var(--text-3);
+    font-size: 12px;
+}
+
+/* On a phone the two buttons squeezed the username to "test…". */
+@media (max-width: 480px) {
+    .row:has(.row-actions) {
+        flex-wrap: wrap;
+    }
+    .row-actions {
+        flex-basis: 100%;
+        justify-content: flex-end;
+    }
+}
+
+.scrim {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 20;
+}
+
+.sheet {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    padding: var(--space-5) var(--space-4) calc(var(--space-8) + env(safe-area-inset-bottom));
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    background: var(--surface);
+    z-index: 21;
+}
+
+.sheet h2 {
+    margin: 0 0 var(--space-4);
+    font-size: 19px;
+    font-weight: 600;
+}
+
+.sheet .hint {
+    margin: var(--space-2) 0 var(--space-4);
+    color: var(--text-3);
+    font-size: 12px;
+}
+
+/* The code is drawn black on white by the library, which is what a scanner
+   wants — so it keeps its own light background in both themes. */
+.sheet .qr {
+    display: block;
+    width: 232px;
+    max-width: 100%;
+    height: auto;
+    margin: 0 auto var(--space-4);
+    border-radius: var(--radius-md);
+    background: #fff;
+}
+
+.sheet .link {
+    margin: 0 0 var(--space-5);
+    padding: var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--elevated);
+    color: var(--text-2);
+    font-size: 12px;
+    overflow-wrap: anywhere;
+    user-select: all;
+}
+
+.sheet .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+}
+
+.sheet .actions button {
+    flex: 1 1 130px;
+    min-height: 48px;
+    border-radius: var(--radius-md);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.sheet .actions .ghost {
+    border: 1px solid var(--border);
+    background: none;
+    color: var(--text-2);
+}
+
+.sheet .actions .primary {
+    border: 0;
+    background: var(--accent);
+    color: var(--on-accent);
+}
+
+@media (min-width: 900px) {
+    .sheet {
+        top: 50%;
+        right: auto;
+        bottom: auto;
+        left: 50%;
+        width: 420px;
+        transform: translate(-50%, -50%);
+        border-radius: var(--radius-xl);
+    }
+}

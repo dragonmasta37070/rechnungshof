@@ -27,6 +27,14 @@ export const routes: Routes = [
         canActivate: [authGuard],
         loadComponent: () => import("./pages/invite/invite").then((m) => m.Invite),
     },
+    // Same reasoning as invite/:token: a quick-add link is followed by someone
+    // who is not looking at their own data yet, and the guard remembers it
+    // across the trip to Authentik.
+    {
+        path: "friends/add/:token",
+        canActivate: [authGuard],
+        loadComponent: () => import("./pages/friend-add/friend-add").then((m) => m.FriendAdd),
+    },
     {
         path: "",
         canActivate: [authGuard],
@@ -48,6 +56,10 @@ export const routes: Routes = [
             {
                 path: "groups/:id",
                 loadComponent: () => import("./pages/group/group").then((m) => m.GroupView),
+            },
+            {
+                path: "friends",
+                loadComponent: () => import("./pages/friends/friends").then((m) => m.Friends),
             },
             {
                 path: "balances",

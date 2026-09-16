@@ -37,6 +37,21 @@ export namespace Schemas {
         deleted: boolean;
     };
     export type FileAttachmentJsonExportV1 = { filename: string; mime_type: string; content: string };
+    export type FriendQuickLink = { token: string };
+    /**
+     * A request that has not been answered yet, from either side.
+     */
+    export type FriendRequest = { id: number; user_id: number; username: string; created_at: string };
+    export type FriendRequestPayload = { username: string };
+    /**
+     * The other person, as every friends screen shows them.
+     */
+    export type FriendUser = { user_id: number; username: string };
+    export type FriendsOverview = {
+        friends: Array<FriendUser>;
+        incoming: Array<FriendRequest>;
+        outgoing: Array<FriendRequest>;
+    };
     export type ServiceMessageType = "info" | "error" | "warning" | "success";
     export type ServiceMessage = { type: ServiceMessageType; title?: (string | null) | undefined; body: string };
     /**
