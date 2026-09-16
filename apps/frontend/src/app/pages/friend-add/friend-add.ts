@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input, OnInit, signal } from "@angular/core";
+import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit, signal } from "@angular/core";
 import { Router, RouterLink } from "@angular/router";
 
 import { Api, type FriendUser } from "../../api/api";
@@ -24,10 +24,15 @@ import { Icon } from "../../ui/icon";
                 <div class="card">
                     <p class="name">{{ friend.username }}</p>
                 </div>
-                <p class="hint">Möchtest du {{ friend.username }} als Freund hinzufügen?</p>
-                <button type="button" class="primary" [disabled]="adding()" (click)="add()">
-                    Als Freund hinzufügen
-                </button>
+                @if (alreadyFriends()) {
+                    <p class="hint">Ihr seid schon Freunde.</p>
+                    <a class="back" routerLink="/friends">Zu den Freunden</a>
+                } @else {
+                    <p class="hint">Möchtest du {{ friend.username }} als Freund hinzufügen?</p>
+                    <button type="button" class="primary" [disabled]="adding()" (click)="add()">
+                        Als Freund hinzufügen
+                    </button>
+                }
             } @else if (error(); as e) {
                 <div class="empty">
                     <app-icon name="users" [size]="32" />
@@ -90,7 +95,17 @@ export class FriendAdd implements OnInit {
     protected readonly error = signal<string | null>(null);
     protected readonly adding = signal(false);
 
+    /** Opening a friend's link twice should say so, not offer to add them again. */
+    protected readonly alreadyFriends = computed(() => {
+        const owner = this.owner();
+        return owner != null && (this.store.friends()?.friends ?? []).some((f) => f.user_id === owner.user_id);
+    });
+
     ngOnInit(): void {
+        // This page sits outside the shell, so nothing has loaded the store yet.
+        if (this.store.friends() == null) {
+            this.store.refreshFriends().subscribe({ error: () => undefined });
+        }
         this.api.previewFriendQuick(this.token()).subscribe({
             next: (owner) => this.owner.set(owner),
             // 400 is the one case the backend can describe: it is the user's own
