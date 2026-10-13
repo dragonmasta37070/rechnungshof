@@ -1,5 +1,5 @@
 import secrets
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 import pytest
 from asyncpg import Pool
@@ -7,8 +7,10 @@ from sftkit.error import InvalidArgument
 
 from abrechnung.application.accounts import AccountService
 from abrechnung.application.groups import GroupService
+from abrechnung.application.transactions import TransactionService
 from abrechnung.domain.accounts import AccountType, NewAccount
 from abrechnung.domain.groups import Group, GroupInvite, GroupPreview
+from abrechnung.domain.transactions import NewTransaction, SplitMode, TransactionType
 from abrechnung.domain.users import User
 
 from .conftest import CreateTestPurchase, CreateTestUser
@@ -210,6 +212,46 @@ async def test_delete_group(
         currency_identifier="EUR",
         terms="terms",
         add_user_account_on_join=False,
+    )
+
+    await group_service.delete_group(user=dummy_user, group_id=group_id)
+
+
+async def test_delete_group_with_tagged_expense(
+    group_service: GroupService,
+    account_service: AccountService,
+    transaction_service: TransactionService,
+    dummy_user: User,
+):
+    group_id = await group_service.create_group(
+        user=dummy_user,
+        name=secrets.token_hex(16),
+        description="",
+        currency_identifier="EUR",
+        terms="",
+        add_user_account_on_join=False,
+    )
+    account_id = await account_service.create_account(
+        user=dummy_user,
+        group_id=group_id,
+        account=NewAccount(type=AccountType.personal, name="payer"),
+    )
+    await transaction_service.create_transaction(
+        user=dummy_user,
+        group_id=group_id,
+        transaction=NewTransaction(
+            type=TransactionType.purchase,
+            name="dinner",
+            description="",
+            value=10.0,
+            currency_identifier="EUR",
+            currency_conversion_rate=1.0,
+            billed_at=date.today(),
+            tags=["Dining out"],
+            creditor_shares={account_id: 1.0},
+            debitor_shares={account_id: 10.0},
+            split_mode=SplitMode.absolute,
+        ),
     )
 
     await group_service.delete_group(user=dummy_user, group_id=group_id)
