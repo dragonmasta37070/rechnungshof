@@ -62,7 +62,7 @@ export class Groups {
                 // The row still opens the group, where the question is asked.
                 linked: own != null,
                 members: plural(
-                    this.store.accountsOf(group.id).filter((a) => a.type === "personal").length,
+                    this.store.accountsOf(group.id).filter((a) => a.type === "personal" && !a.archived).length,
                     "Mitglied",
                     "Mitglieder"
                 ),

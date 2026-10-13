@@ -116,7 +116,7 @@ export class OwnAccountPicker implements OnInit {
         const owned = new Set(this.members().map((m) => m.owned_account_id));
         return this.store
             .accountsOf(this.groupId())
-            .filter((a) => !a.deleted && a.type === "personal" && !owned.has(a.id));
+            .filter((a) => !a.deleted && !a.archived && a.type === "personal" && !owned.has(a.id));
     });
 
     protected readonly suggestedAccountId = computed(() => {

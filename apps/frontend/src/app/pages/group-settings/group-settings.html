@@ -75,6 +75,18 @@
                 <span class="title">{{ account.name }}</span>
                 <span class="sub">kein eigener Login</span>
             </span>
+            @if (g.can_write) {
+            <span class="trail">
+                <button
+                    type="button"
+                    class="cap-action"
+                    [disabled]="archiving() !== null"
+                    (click)="setArchived(account.id, true)"
+                >
+                    Inaktiv setzen
+                </button>
+            </span>
+            }
         </div>
         } @empty {
         <div class="row static">
@@ -83,7 +95,38 @@
         }
     </div>
 
-    @if (g.can_write) {
+    @if (archivedAccounts().length) {
+    <p class="cap">
+        <span>Inaktiv · {{ archivedAccounts().length }}</span>
+        <button type="button" class="cap-action" (click)="archivedOpen.set(!archivedOpen())">
+            {{ archivedOpen() ? "ausblenden" : "anzeigen" }}
+        </button>
+    </p>
+    @if (archivedOpen()) {
+    <div class="list">
+        @for (account of archivedAccounts(); track account.id) {
+        <div class="row static">
+            <span class="avatar">{{ account.name.charAt(0) }}</span>
+            <span class="body">
+                <span class="title">{{ account.name }}</span>
+                <span class="sub">nicht mehr bei neuen Ausgaben · bleibt in alten sichtbar</span>
+            </span>
+            @if (g.can_write) {
+            <span class="trail">
+                <button
+                    type="button"
+                    class="cap-action"
+                    [disabled]="archiving() !== null"
+                    (click)="setArchived(account.id, false)"
+                >
+                    Reaktivieren
+                </button>
+            </span>
+            }
+        </div>
+        }
+    </div>
+    } } @if (g.can_write) {
     <p class="cap"><span>Einladen</span></p>
     <div class="invite-form">
         @if (invitableFriends().length) {

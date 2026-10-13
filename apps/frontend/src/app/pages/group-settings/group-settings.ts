@@ -74,8 +74,16 @@ export class GroupSettings implements OnInit {
     /** Accounts no member has claimed — the placeholder people of this group. */
     protected readonly freeAccounts = computed(() => {
         const owned = new Set(this.members().map((m) => m.owned_account_id));
-        return this.accounts().filter((a) => !owned.has(a.id));
+        return this.accounts().filter((a) => !owned.has(a.id) && !a.archived);
     });
+
+    /**
+     * People who left. Old expenses still carry their shares, so they cannot be
+     * deleted — archived, they stop showing up when a new expense is entered.
+     */
+    protected readonly archivedAccounts = computed(() => this.accounts().filter((a) => a.archived));
+    protected readonly archivedOpen = signal(false);
+    protected readonly archiving = signal<number | null>(null);
 
     protected readonly ownAccountName = computed(() => {
         const own = this.group()?.owned_account_id;
@@ -191,6 +199,21 @@ export class GroupSettings implements OnInit {
             error: () => {
                 this.addingPerson.set(false);
                 this.store.notice.set("Person konnte nicht hinzugefügt werden.");
+            },
+        });
+    }
+
+    setArchived(accountId: number, archived: boolean): void {
+        if (this.archiving() !== null) {
+            return;
+        }
+        this.archiving.set(accountId);
+        this.store.notice.set(null);
+        this.api.setAccountArchived(this.groupId(), accountId, archived).subscribe({
+            next: () => this.store.refreshGroup(this.groupId()).subscribe(() => this.archiving.set(null)),
+            error: (error: unknown) => {
+                this.archiving.set(null);
+                this.store.notice.set(apiMessage(error) ?? "Person konnte nicht geändert werden.");
             },
         });
     }

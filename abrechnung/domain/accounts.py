@@ -37,6 +37,7 @@ class ClearingAccount(BaseModel):
     last_changed: datetime
 
     deleted: bool
+    archived: bool = False
 
 
 class PersonalAccount(BaseModel):
@@ -46,6 +47,8 @@ class PersonalAccount(BaseModel):
     name: str
     description: str
     deleted: bool
+    # Left the group: kept for old expenses and balances, hidden from new ones.
+    archived: bool = False
 
     last_changed: datetime
 

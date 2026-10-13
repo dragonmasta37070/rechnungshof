@@ -75,7 +75,18 @@ export class Editor {
     protected readonly currency = computed(() => this.group()?.currency_identifier ?? "EUR");
     protected readonly symbol = computed(() => currencySymbol(this.currency()));
 
-    protected readonly people = computed(() => this.store.accountsOf(this.gid()).filter((a) => a.type === "personal"));
+    /**
+     * Who can be picked. Archived people (left the group) are not offered, unless
+     * the expense being edited already involves them — dropping them would
+     * silently rewrite an old split.
+     */
+    protected readonly people = computed(() =>
+        this.store
+            .accountsOf(this.gid())
+            .filter(
+                (a) => a.type === "personal" && (!a.archived || a.id in this.shares() || a.id === this.creditorId())
+            )
+    );
 
     protected readonly creditorName = computed(() => {
         const id = this.creditorId();

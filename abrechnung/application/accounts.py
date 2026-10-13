@@ -258,6 +258,37 @@ class AccountService(Service[Config]):
 
     @with_db_transaction
     @with_group_last_changed_update
+    async def set_account_archived(
+        self,
+        *,
+        conn: Connection,
+        user: User,
+        group_id: int,
+        account_id: int,
+        archived: bool,
+    ):
+        account_group_id, _ = await self._check_account_permissions(
+            conn=conn, user=user, account_id=account_id, can_write=True
+        )
+        if account_group_id != group_id:
+            raise InvalidArgument("Account does not belong to this group")
+
+        name = await conn.fetchval(
+            "update account a set archived = $2 from account_state_valid_at() s "
+            "where a.id = $1 and s.account_id = a.id returning s.name",
+            account_id,
+            archived,
+        )
+        await create_group_log(
+            conn=conn,
+            group_id=group_id,
+            user=user,
+            type="account-committed",
+            message=f"{'archived' if archived else 'unarchived'} account {name}",
+        )
+
+    @with_db_transaction
+    @with_group_last_changed_update
     async def delete_account(
         self,
         *,

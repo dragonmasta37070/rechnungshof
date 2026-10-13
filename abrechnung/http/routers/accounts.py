@@ -1,6 +1,7 @@
 from typing import List
 
 from fastapi import APIRouter, Depends, status
+from pydantic import BaseModel
 
 from abrechnung.application.accounts import AccountService
 from abrechnung.domain.accounts import Account, NewAccount
@@ -89,6 +90,32 @@ async def update_account(
         account=payload,
     )
 
+    return await account_service.get_account(user=user, group_id=group_id, account_id=account_id)
+
+
+class ArchiveAccountPayload(BaseModel):
+    archived: bool
+
+
+@router.post(
+    r"/v1/groups/{group_id}/accounts/{account_id}/archived",
+    summary="archive or unarchive an account",
+    response_model=Account,
+    operation_id="set_account_archived",
+)
+async def set_account_archived(
+    group_id: int,
+    account_id: int,
+    payload: ArchiveAccountPayload,
+    user: User = Depends(get_current_user),
+    account_service: AccountService = Depends(get_account_service),
+):
+    await account_service.set_account_archived(
+        group_id=group_id,
+        user=user,
+        account_id=account_id,
+        archived=payload.archived,
+    )
     return await account_service.get_account(user=user, group_id=group_id, account_id=account_id)
 
 

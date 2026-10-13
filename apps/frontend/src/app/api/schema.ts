@@ -12,6 +12,7 @@ export namespace Schemas {
         clearing_shares: Record<string, number>;
         last_changed: string;
         deleted: boolean;
+        archived?: boolean | undefined;
     };
     export type ClearingAccountJsonExportV1 = {
         id: number;
@@ -247,6 +248,7 @@ export namespace Schemas {
         name: string;
         description: string;
         deleted: boolean;
+        archived?: boolean | undefined;
         last_changed: string;
     };
     export type PreviewGroupPayload = { invite_token: string };

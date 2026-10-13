@@ -79,6 +79,11 @@ export class GroupView {
 
     protected readonly members = computed(() => {
         const nameOf = new Map(this.accounts().map((a) => [a.id, a.name]));
+        const archived = new Set(
+            this.accounts()
+                .filter((a) => a.archived)
+                .map((a) => a.id)
+        );
         const balances = balancesFor(this.accounts(), this.transactions());
         const own = this.group()?.owned_account_id ?? null;
         const max = Math.max(...balances.map((b) => Math.abs(b.balance)), 1);
@@ -86,6 +91,7 @@ export class GroupView {
         return (
             balances
                 .filter((b) => nameOf.has(b.accountId))
+                .filter((b) => !(archived.has(b.accountId) && Math.abs(b.balance) < 0.005))
                 .map((b) => ({
                     id: b.accountId,
                     name: nameOf.get(b.accountId)!,
