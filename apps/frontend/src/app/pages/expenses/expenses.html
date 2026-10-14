@@ -4,7 +4,12 @@
 </div>
 
 <div class="page">
-    @if (store.loading()) {
+    @for (group of unlinkedGroups(); track group.id) {
+    <p class="cap"><span>Neu in „{{ group.name }}“</span></p>
+    <div class="card">
+        <app-own-account-picker [groupId]="group.id" />
+    </div>
+    } @if (store.loading()) {
     <p class="muted">Wird geladen …</p>
     } @else if (stats().count) {
     <div class="card">

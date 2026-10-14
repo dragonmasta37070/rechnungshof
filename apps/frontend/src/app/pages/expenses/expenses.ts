@@ -7,6 +7,7 @@ import { Store } from "../../domain/store";
 import { effectOf, shareOf } from "../../domain/share";
 import { Amount } from "../../ui/amount";
 import { Icon } from "../../ui/icon";
+import { OwnAccountPicker } from "../../ui/own-account-picker";
 
 interface FeedRow {
     group: Group;
@@ -38,13 +39,23 @@ interface DateSection {
 @Component({
     selector: "app-expenses",
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [Icon, Amount],
+    imports: [Icon, Amount, OwnAccountPicker],
     templateUrl: "./expenses.html",
     styleUrls: ["../../ui/ui.css", "./expenses.css"],
 })
 export class Expenses {
     private readonly router = inject(Router);
     protected readonly store = inject(Store);
+
+    /**
+     * Groups the user belongs to without knowing who they are in them — typically
+     * just joined via an email invite. The question is asked right here, on the
+     * page they land on after signing in, instead of waiting until they open the
+     * group: until it is answered the group cannot show them a balance.
+     */
+    protected readonly unlinkedGroups = computed(() =>
+        this.store.groups().filter((g) => g.owned_account_id == null && !g.archived)
+    );
 
     protected readonly sections = computed<DateSection[]>(() => {
         const byDate = new Map<string, FeedRow[]>();
