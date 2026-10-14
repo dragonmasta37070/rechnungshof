@@ -358,6 +358,34 @@ async def create_invite(
     return await group_service.get_invite(user=user, group_id=group_id, invite_id=invite_id)
 
 
+class InviteEmailPayload(BaseModel):
+    email: str
+    account_id: int | None = None
+    valid_until: datetime | None = None
+
+
+@router.post(
+    r"/v1/groups/{group_id}/invites/email",
+    summary="invite an email address, optionally as a specific person of the group",
+    response_model=GroupInvite,
+    operation_id="invite_email",
+    tags=["groups", "group_invites"],
+)
+async def invite_email(
+    group_id: int,
+    payload: InviteEmailPayload,
+    user: User = Depends(get_current_user),
+    group_service: GroupService = Depends(get_group_service),
+):
+    valid_until = payload.valid_until
+    if valid_until is not None and valid_until.tzinfo is None:
+        valid_until = valid_until.replace(tzinfo=timezone.utc)
+    invite_id = await group_service.invite_by_email(
+        user=user, group_id=group_id, email=payload.email, account_id=payload.account_id, valid_until=valid_until
+    )
+    return await group_service.get_invite(user=user, group_id=group_id, invite_id=invite_id)
+
+
 class InviteUserPayload(BaseModel):
     username: str
 

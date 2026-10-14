@@ -165,6 +165,70 @@ class GroupService(Service[Config]):
         )
 
     @with_db_transaction
+    @requires_group_permissions(requires_write=True)
+    async def invite_by_email(
+        self,
+        *,
+        conn: Connection,
+        user: User,
+        group_id: int,
+        email: str,
+        account_id: int | None,
+        valid_until: datetime | None,
+    ) -> int:
+        """Invites an email address, optionally as a specific person of the group.
+
+        Accepted automatically the first time a login with that address signs
+        in (see accept_email_invites), so a welcome mail needs no invite link.
+        """
+        if user.is_guest_user:
+            raise AccessDenied("guest users are not allowed to create group invites")
+        email = email.strip()
+        if "@" not in email:
+            raise InvalidArgument("Ungültige E-Mail-Adresse")
+
+        if account_id is not None:
+            account = await conn.fetchrow(
+                "select a.type, a.deleted from account_state_valid_at() a where a.account_id = $1 and a.group_id = $2",
+                account_id,
+                group_id,
+            )
+            if account is None or account["deleted"] or account["type"] != AccountType.personal.value:
+                raise InvalidArgument("Diese Person gibt es in der Gruppe nicht")
+            claimed = await conn.fetchval(
+                "select exists (select from group_membership where group_id = $1 and owned_account_id = $2)",
+                group_id,
+                account_id,
+            )
+            if claimed:
+                raise InvalidArgument("Diese Person gehört schon zu einem Login")
+
+        already_member = await conn.fetchval(
+            "select exists (select from group_membership gm join usr u on u.id = gm.user_id "
+            "where gm.group_id = $1 and lower(u.email) = lower($2))",
+            group_id,
+            email,
+        )
+        if already_member:
+            raise InvalidArgument("Ist bereits Mitglied")
+
+        # One open invite per address and group: a new one replaces the old.
+        await conn.execute(
+            "delete from group_invite where group_id = $1 and lower(invited_email) = lower($2)", group_id, email
+        )
+        await create_group_log(conn=conn, group_id=group_id, user=user, type="invite-created")
+        return await conn.fetchval(
+            "insert into group_invite (group_id, description, created_by, valid_until, single_use, join_as_editor, "
+            "invited_email, account_id) values ($1, $2, $3, $4, true, true, $5, $6) returning id",
+            group_id,
+            email,
+            user.id,
+            valid_until,
+            email,
+            account_id,
+        )
+
+    @with_db_transaction
     async def list_pending_invites(self, *, conn: Connection, user: User) -> list[PendingInvite]:
         return await conn.fetch_many(
             PendingInvite,
@@ -710,3 +774,54 @@ class GroupService(Service[Config]):
     @timed_cache(timedelta(minutes=5))
     async def total_number_of_groups(self, conn: Connection):
         return await conn.fetchval("select count(*) from grp")
+
+
+async def accept_email_invites(conn: Connection, user: User) -> None:
+    """Joins the user to every group that invited their email address.
+
+    Runs on sign-in. The invite may name the person (account) the user is in
+    that group; it is linked unless someone else has claimed it meanwhile, in
+    which case the user joins without one and the group asks who they are.
+    """
+    invites = await conn.fetch(
+        "select id, group_id, created_by, join_as_editor, account_id from group_invite "
+        "where lower(invited_email) = lower($1) and (valid_until is null or valid_until > now())",
+        user.email,
+    )
+    for invite in invites:
+        account_id = invite["account_id"]
+        if account_id is not None:
+            claimed = await conn.fetchval(
+                "select exists (select from group_membership where group_id = $1 and owned_account_id = $2)",
+                invite["group_id"],
+                account_id,
+            )
+            if claimed:
+                account_id = None
+
+        membership = await conn.fetchrow(
+            "select owned_account_id from group_membership where group_id = $1 and user_id = $2",
+            invite["group_id"],
+            user.id,
+        )
+        if membership is None:
+            await conn.execute(
+                "insert into group_membership (user_id, group_id, invited_by, can_write, is_owner, owned_account_id) "
+                "values ($1, $2, $3, $4, false, $5)",
+                user.id,
+                invite["group_id"],
+                invite["created_by"],
+                invite["join_as_editor"],
+                account_id,
+            )
+            await create_group_log(
+                conn=conn, group_id=invite["group_id"], user=user, type="member-joined", affected_user_id=user.id
+            )
+        elif membership["owned_account_id"] is None and account_id is not None:
+            await conn.execute(
+                "update group_membership set owned_account_id = $3 where group_id = $1 and user_id = $2",
+                invite["group_id"],
+                user.id,
+                account_id,
+            )
+        await conn.execute("delete from group_invite where id = $1", invite["id"])

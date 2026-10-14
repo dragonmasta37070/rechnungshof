@@ -6,6 +6,7 @@ from sftkit.database import Connection
 from sftkit.error import InvalidArgument, Unauthorized
 from sftkit.service import Service, with_db_transaction
 
+from abrechnung.application.groups import accept_email_invites
 from abrechnung.config import Config
 from abrechnung.domain.users import User
 
@@ -71,10 +72,13 @@ class UserService(Service[Config]):
         if user_id is not None:
             # Keep the local copy in step with the provider.
             await conn.execute("update usr set email = $2 where id = $1", user_id, email)
-            return await self._get_user(conn, user_id)
+            user = await self._get_user(conn, user_id)
+        else:
+            username = claims.get("preferred_username") or claims.get("name") or email.split("@")[0]
+            user = await self._provision_user(conn=conn, subject=subject, email=email, username=username)
 
-        username = claims.get("preferred_username") or claims.get("name") or email.split("@")[0]
-        return await self._provision_user(conn=conn, subject=subject, email=email, username=username)
+        await accept_email_invites(conn, user)
+        return user
 
     async def _provision_user(self, *, conn: Connection, subject: str, email: str, username: str) -> User:
         # Deliberately no linking of an existing account by email address. Matching
