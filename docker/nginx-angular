@@ -35,11 +35,17 @@ server {
     root /var/www/rechnungshof/;
     index index.html;
 
-    # Build artefacts carry a content hash in the filename, so they can be cached
-    # forever. The manifest is excluded: its name never changes.
-    location ~* \.(js|css|woff2|ttf|png|svg|ico)$ {
+    # Only the bundles carry a content hash in their filename (chunk-/main-/styles-),
+    # so only they can be cached forever.
+    location ~* "-[A-Za-z0-9_-]{8}\.(js|css)$" {
         expires 1y;
         add_header Cache-Control "public, immutable";
+    }
+
+    # Icons, favicon and fonts keep their names when their content changes. Cached
+    # as immutable, a replaced app icon stayed the old one in browsers for a year.
+    location ~* \.(woff2|ttf|png|svg|ico)$ {
+        add_header Cache-Control "public, max-age=3600";
     }
 
     # Client-side routing: /groups/5 and /auth/callback are app routes, not
